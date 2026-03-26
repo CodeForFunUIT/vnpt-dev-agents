@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { resolveStackProfile } from "../stack-profiles/index.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Template Generator
@@ -102,7 +103,7 @@ export function registerTemplateTools(server: McpServer) {
         .default("auto")
         .describe("Tech stack"),
     },
-    async ({ featureName, templateType, projectRoot, targetDir, stack }) => {
+    withErrorHandler("generate_template", async ({ featureName, templateType, projectRoot, targetDir, stack }) => {
 
       const profile = await resolveStackProfile(stack, projectRoot);
       const stackTemplates = getTemplates()[profile.name];
@@ -115,7 +116,7 @@ export function registerTemplateTools(server: McpServer) {
               `# ❌ Không có template cho stack: ${profile.displayName}`,
               "",
               "Stacks hỗ trợ: Angular, NestJS, React, Flutter, Spring Boot.",
-            ].join("\n"),
+            ].join("\n") + getChainHint("generate_template"),
           }],
         };
       }
@@ -168,9 +169,9 @@ export function registerTemplateTools(server: McpServer) {
       ];
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("generate_template") }],
       };
-    }
+    })
   );
 }
 

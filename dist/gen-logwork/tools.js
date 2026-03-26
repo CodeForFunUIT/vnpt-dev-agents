@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { jiraClient } from "../jira/client.js";
 import { resolveStackProfile, ANGULAR_PROFILE } from "../stack-profiles/index.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // generate_worklog — Tự gen nội dung logwork
 // từ data có sẵn, KHÔNG gọi Claude API.
@@ -236,7 +237,7 @@ export function registerWorklogTools(server) {
             .default(false)
             .describe("User đã test chức năng chưa? Nếu false → hiển cảnh báo nhắc test trước. " +
             "Nếu autoSubmit=true nhưng tested=false → chặn submit và yêu cầu test trước."),
-    }, async ({ issueKey, timeSpent, projectRoot, recentFileWindowMinutes, additionalNotes, autoSubmit, stack, tested, }) => {
+    }, withErrorHandler("generate_worklog", async ({ issueKey, timeSpent, projectRoot, recentFileWindowMinutes, additionalNotes, autoSubmit, stack, tested, }) => {
         // ── 1. Đọc Jira issue ──────────────────
         const issue = await jiraClient.getIssue(issueKey);
         const fields = issue.fields;
@@ -282,7 +283,7 @@ export function registerWorklogTools(server) {
                             "1. Test thủ công chức năng đã implement",
                             "2. Kiểm tra không có bug phát sinh",
                             "3. Gọi lại với `tested: true` khi đã sẵn sàng",
-                        ].join("\n"),
+                        ].join("\n") + getChainHint("generate_worklog"),
                     }],
             };
         }
@@ -299,7 +300,7 @@ export function registerWorklogTools(server) {
                             "```",
                             comment,
                             "```",
-                        ].join("\n"),
+                        ].join("\n") + getChainHint("generate_worklog"),
                     }],
             };
         }
@@ -336,9 +337,9 @@ export function registerWorklogTools(server) {
                         !tested
                             ? "\n🧪 **Nhắc nhở:** Hãy test thủ công trước khi submit. Gọi lại với `tested: true` khi sẵn sàng."
                             : "",
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("generate_worklog"),
                 }],
         };
-    });
+    }));
 }
 //# sourceMappingURL=tools.js.map

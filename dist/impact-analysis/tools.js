@@ -3,6 +3,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { resolveStackProfile } from "../stack-profiles/index.js";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 const execAsync = promisify(exec);
 // ─────────────────────────────────────────────
 // Dependency Impact Analysis
@@ -23,7 +24,7 @@ export function registerImpactTools(server) {
             .describe("Tech stack"),
         depth: z.number().default(2)
             .describe("Số tầng dependency cần quét. Default: 2"),
-    }, async ({ filePaths, projectRoot, stack, depth }) => {
+    }, withErrorHandler("analyze_impact", async ({ filePaths, projectRoot, stack, depth }) => {
         const profile = await resolveStackProfile(stack, projectRoot);
         const importPattern = getImportPattern(profile.name);
         const allImpacts = [];
@@ -84,9 +85,9 @@ export function registerImpactTools(server) {
         }
         lines.push("", "📌 **Next step:** Thêm các file bị ảnh hưởng vào context bằng `detect_files_from_task`.");
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("analyze_impact") }],
         };
-    });
+    }));
 }
 function getImportPattern(stack) {
     // grep pattern to find imports

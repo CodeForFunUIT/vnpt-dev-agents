@@ -63,8 +63,25 @@ export function formatIssueForAI(issue) {
             lines.push(`### ${c.author.displayName} — ${formatDate(c.created)}`, cleanJiraMarkup(c.body), "");
         }
     }
-    // Gợi ý cho AI
-    lines.push("---", "## 💡 Gợi ý bước tiếp theo", "Bạn muốn tôi:", "1. **Phân tích** và đề xuất hướng implement?", "2. **Generate code** cho task này?", "3. **Tạo sub-tasks** từ task này?", "4. **Chuyển trạng thái** sang 'In Progress'?");
+    // ── Phân tích quality để đưa gợi ý thông minh ──
+    const hasSections = (key) => new RegExp(`^## \\[${key}\\]`, "m").test(f.description ?? "");
+    const sectionCount = ["WHY", "WHAT", "WHERE", "HOW", "SCENARIOS", "DONE_WHEN"]
+        .filter(s => hasSections(s)).length;
+    const scenarioCount = (f.description?.match(/^### Scenario/gm) ?? []).length;
+    const hasGoodDesc = sectionCount >= 4 && scenarioCount >= 1;
+    lines.push("---", "## 🤖 Hướng dẫn cho AI — Bước tiếp theo", "");
+    // Ưu tiên 1: Kiểm tra/bổ sung description nếu kém
+    if (!f.description || f.description.trim().length < 50) {
+        lines.push("### ⚠️ Description TRỐNG hoặc quá ngắn", `1. **BẮT BUỘC** gọi \`generate_gwt_description\` để sinh mô tả chuẩn GWT từ tiêu đề và context.`, `2. Hiển thị kết quả cho user duyệt trước khi tiếp tục.`, "");
+    }
+    else if (!hasGoodDesc) {
+        lines.push(`### 📝 Description chưa đạt chuẩn (${sectionCount}/6 sections, ${scenarioCount} scenarios)`, `1. Gọi \`validate_description_quality\` để chấm điểm chi tiết.`, `2. Gọi \`generate_gwt_description\` để bổ sung các phần còn thiếu.`, `3. Hiển thị kết quả cho user duyệt.`, "");
+    }
+    else {
+        lines.push(`### ✅ Description đạt chuẩn (${sectionCount}/6 sections, ${scenarioCount} scenarios)`, "");
+    }
+    // Ưu tiên 2: Gợi ý bước kế tiếp
+    lines.push("### Các bước tiếp theo:", `- Gọi \`evaluate_task_complexity\` để chấm điểm độ phức tạp, AI risk, và ước tính giờ.`, `- Gọi \`task_kickoff\` để khởi tạo workflow đầy đủ cho task này.`, `- Gọi \`detect_files_from_task\` để tìm file liên quan.`, `- Gọi \`check_security_flag\` nếu task liên quan auth/token.`);
     return lines.filter((l) => l !== null).join("\n");
 }
 // ─── Helpers ──────────────────────────────────

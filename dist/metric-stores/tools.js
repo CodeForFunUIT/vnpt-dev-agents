@@ -1,6 +1,7 @@
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ── Helpers ────────────────────────────────────
 async function getStorePath() {
     const candidates = [
@@ -84,7 +85,7 @@ export function registerMetricsTools(server) {
             .describe("Tags: ['auth', 'form', 'bug-fix'...]"),
         sprint: z.string().optional()
             .describe("Tên sprint. VD: 'Sprint 42'"),
-    }, async (input) => {
+    }, withErrorHandler("track_metric", async (input) => {
         const store = await loadStore();
         // Tính cycle time nếu có đủ dữ liệu
         let cycleTimeMinutes;
@@ -150,10 +151,10 @@ export function registerMetricsTools(server) {
                         store.entries.length >= 10
                             ? "📊 Đã đủ data — dùng `get_metrics_report` để xem báo cáo!"
                             : `📊 Cần thêm ${10 - store.entries.length} tasks nữa để có báo cáo đủ ý nghĩa`,
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("track_metric"),
                 }],
         };
-    });
+    }));
     // ── TOOL 2: Get metrics report ────────────────
     server.tool("get_metrics_report", "Tạo báo cáo tổng quan metrics theo khoảng thời gian hoặc sprint. " +
         "Bao gồm: cycle time trend, AI success rate, estimation accuracy, " +
@@ -167,7 +168,7 @@ export function registerMetricsTools(server) {
             .describe("Filter theo tag. VD: 'auth'"),
         compareLastNSprints: z.number().optional()
             .describe("So sánh N sprints gần nhất với nhau"),
-    }, async ({ lastNDays, sprint, filterTag, compareLastNSprints }) => {
+    }, withErrorHandler("get_metrics_report", async ({ lastNDays, sprint, filterTag, compareLastNSprints }) => {
         const store = await loadStore();
         if (store.entries.length === 0) {
             return {
@@ -293,16 +294,16 @@ export function registerMetricsTools(server) {
             lines.push("- ✅ AI đang perform tốt — 70%+ tasks dùng được ngay không cần sửa!");
         }
         return {
-            content: [{ type: "text", text: lines.filter(Boolean).join("\n") }],
+            content: [{ type: "text", text: lines.filter(Boolean).join("\n") + getChainHint("get_metrics_report") }],
         };
-    });
+    }));
     // ── TOOL 3: Get metrics dashboard (HTML) ─────
     server.tool("get_metrics_dashboard", "Tạo dashboard HTML visualize metrics inline trong Antigravity. " +
         "Hiển thị: trend charts, success rate gauge, cycle time histogram. " +
         "Dùng khi muốn nhìn tổng quan trực quan thay vì đọc numbers.", {
         lastNDays: z.number().default(30)
             .describe("Hiển thị N ngày gần nhất. Default: 30"),
-    }, async ({ lastNDays }) => {
+    }, withErrorHandler("get_metrics_dashboard", async ({ lastNDays }) => {
         const store = await loadStore();
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - lastNDays);
@@ -331,9 +332,9 @@ export function registerMetricsTools(server) {
             : "N/A";
         const html = buildDashboardHtml(lastNDays, entries.length, aiSuccessRate, avgQuality, avgRevisions, avgEstRatio, labels, qualityData, revisionData, cycleData);
         return {
-            content: [{ type: "text", text: html }],
+            content: [{ type: "text", text: html + getChainHint("get_metrics_dashboard") }],
         };
-    });
+    }));
 }
 // ─────────────────────────────────────────────
 // Dashboard HTML builder

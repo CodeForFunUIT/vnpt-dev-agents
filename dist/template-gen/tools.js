@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { resolveStackProfile } from "../stack-profiles/index.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // Template Generator
 //
@@ -88,7 +89,7 @@ export function registerTemplateTools(server) {
         stack: z.enum(["auto", "angular", "spring", "nestjs", "flutter", "react", "generic"])
             .default("auto")
             .describe("Tech stack"),
-    }, async ({ featureName, templateType, projectRoot, targetDir, stack }) => {
+    }, withErrorHandler("generate_template", async ({ featureName, templateType, projectRoot, targetDir, stack }) => {
         const profile = await resolveStackProfile(stack, projectRoot);
         const stackTemplates = getTemplates()[profile.name];
         if (!stackTemplates) {
@@ -99,7 +100,7 @@ export function registerTemplateTools(server) {
                             `# ❌ Không có template cho stack: ${profile.displayName}`,
                             "",
                             "Stacks hỗ trợ: Angular, NestJS, React, Flutter, Spring Boot.",
-                        ].join("\n"),
+                        ].join("\n") + getChainHint("generate_template"),
                     }],
             };
         }
@@ -146,9 +147,9 @@ export function registerTemplateTools(server) {
             `📌 Sau khi tạo → \`detect_files_from_task\` để cập nhật context.`,
         ];
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("generate_template") }],
         };
-    });
+    }));
 }
 // ── Helpers ──────────────────────────────────
 function getDefaultDir(stack) {

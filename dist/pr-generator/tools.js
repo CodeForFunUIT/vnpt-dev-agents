@@ -3,6 +3,7 @@ import { jiraClient } from "../jira/client.js";
 import { resolveStackProfile } from "../stack-profiles/index.js";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 const execAsync = promisify(exec);
 // ─────────────────────────────────────────────
 // PR Description Generator
@@ -24,7 +25,7 @@ export function registerPRTools(server) {
         stack: z.enum(["auto", "angular", "spring", "nestjs", "flutter", "react", "generic"])
             .default("auto")
             .describe("Tech stack. 'auto' = tự detect."),
-    }, async ({ issueKey, projectRoot, baseBranch, stack }) => {
+    }, withErrorHandler("generate_pr_description", async ({ issueKey, projectRoot, baseBranch, stack }) => {
         // 1. Đọc Jira task
         const issue = await jiraClient.getIssue(issueKey);
         const fields = issue.fields;
@@ -129,10 +130,10 @@ export function registerPRTools(server) {
                         "",
                         "---",
                         "📌 **Next step:** Copy nội dung trên → Paste vào PR description.",
-                    ].join("\n"),
+                    ].join("\n") + getChainHint("generate_pr_description"),
                 }],
         };
-    });
+    }));
 }
 // ── Helpers ──────────────────────────────────
 function extractChecklist(desc, section) {

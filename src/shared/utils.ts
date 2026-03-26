@@ -33,14 +33,14 @@ export function formatToolError(
  * Wrapper để bọc handler của tool với try-catch thống nhất.
  * Tự động bắt lỗi và trả về format chuẩn thay vì crash.
  */
-export function withErrorHandler<TArgs extends Record<string, unknown>>(
+export function withErrorHandler<TArgs extends Record<string, unknown>, TExtra = any>(
   toolName: string,
-  handler: (args: TArgs) => Promise<{ content: Array<{ type: string; text: string }> }>,
+  handler: (args: TArgs, extra: TExtra) => Promise<{ content: Array<any> }>,
   errorSuggestions?: string[]
 ) {
-  return async (args: TArgs) => {
+  return async (args: TArgs, extra: TExtra) => {
     try {
-      return await handler(args);
+      return await handler(args, extra);
     } catch (error) {
       console.error(`[${toolName}] Error:`, error);
       return formatToolError(toolName, error, errorSuggestions ?? [

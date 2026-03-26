@@ -6,6 +6,7 @@ import fs from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 const execAsync = promisify(exec);
 
@@ -35,7 +36,7 @@ export function registerPRTools(server: McpServer) {
         .default("auto")
         .describe("Tech stack. 'auto' = tự detect."),
     },
-    async ({ issueKey, projectRoot, baseBranch, stack }) => {
+    withErrorHandler("generate_pr_description", async ({ issueKey, projectRoot, baseBranch, stack }) => {
 
       // 1. Đọc Jira task
       const issue = await jiraClient.getIssue(issueKey);
@@ -165,10 +166,10 @@ export function registerPRTools(server: McpServer) {
             "",
             "---",
             "📌 **Next step:** Copy nội dung trên → Paste vào PR description.",
-          ].join("\n"),
+          ].join("\n") + getChainHint("generate_pr_description"),
         }],
       };
-    }
+    })
   );
 }
 

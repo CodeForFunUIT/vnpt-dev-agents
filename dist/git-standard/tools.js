@@ -2,6 +2,7 @@ import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // Git Standard — Quy chuẩn Git cho project
 //
@@ -77,7 +78,7 @@ export function registerGitStandardTools(server) {
             .describe("Đường dẫn tuyệt đối đến project root. " +
             "Nếu cung cấp → tìm GIT_STANDARD.md trong project trước. " +
             "Bỏ trống → chỉ trả về quy chuẩn mặc định."),
-    }, async ({ projectRoot }) => {
+    }, withErrorHandler("get_git_standard", async ({ projectRoot }) => {
         let result = null;
         // Bước 1: Tìm trong project root (nếu có)
         if (projectRoot) {
@@ -119,10 +120,10 @@ export function registerGitStandardTools(server) {
                         "---",
                         "",
                         result.content,
-                    ].join("\n"),
+                    ].join("\n") + getChainHint("get_git_standard"),
                 }],
         };
-    });
+    }));
     // ── TOOL 2: Gợi ý tên branch ─────────────────
     server.tool("suggest_branch_name", "Gợi ý tên branch theo đúng quy chuẩn Git của project. " +
         "Dựa vào Jira issue key, loại task, và mô tả để sinh tên branch chuẩn. " +
@@ -134,7 +135,7 @@ export function registerGitStandardTools(server) {
             .enum(["feature", "fix", "docs", "refactor", "test", "chore", "hotfix"])
             .default("feature")
             .describe("Loại task: feature, fix, docs, refactor, test, chore, hotfix"),
-    }, async ({ issueKey, summary, issueType }) => {
+    }, withErrorHandler("suggest_branch_name", async ({ issueKey, summary, issueType }) => {
         const slug = toSlug(summary);
         const shortSlug = slug.split("-").slice(0, 5).join("-"); // Tối đa 5 từ
         const keyLower = issueKey.toLowerCase();
@@ -181,10 +182,10 @@ export function registerGitStandardTools(server) {
                         `# Ví dụ tạo branch:`,
                         `git checkout -b ${unique[0]}`,
                         "```",
-                    ].join("\n"),
+                    ].join("\n") + getChainHint("suggest_branch_name"),
                 }],
         };
-    });
+    }));
     // ── TOOL 3: Gợi ý commit message ─────────────
     server.tool("suggest_commit_message", "Gợi ý commit message theo Conventional Commits. " +
         "Dựa vào loại thay đổi, phạm vi, và mô tả để sinh commit chuẩn. " +
@@ -212,7 +213,7 @@ export function registerGitStandardTools(server) {
             .boolean()
             .default(false)
             .describe("Có phải breaking change không? Nếu true → thêm '!' vào commit"),
-    }, async ({ type, scope, description, body, issueKey, isBreaking }) => {
+    }, withErrorHandler("suggest_commit_message", async ({ type, scope, description, body, issueKey, isBreaking }) => {
         // Build commit message theo Conventional Commits
         const scopePart = scope ? `(${scope})` : "";
         const breakingMark = isBreaking ? "!" : "";
@@ -273,10 +274,10 @@ export function registerGitStandardTools(server) {
                             `git commit -m "${headerLine}" -m "${body ?? ""}" ${issueKey ? `-m "Refs: ${issueKey}"` : ""}`,
                         ] : []),
                         "```",
-                    ].join("\n"),
+                    ].join("\n") + getChainHint("suggest_commit_message"),
                 }],
         };
-    });
+    }));
 }
 // ─── Utility ──────────────────────────────────
 /**

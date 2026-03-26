@@ -3,6 +3,7 @@ import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,7 +63,7 @@ export function registerKnowledgeSharingTools(server: McpServer) {
       impact: z.enum(["low", "medium", "high"]).default("medium").describe("Mức độ quan trọng"),
       tags: z.array(z.string()).default([]),
     },
-    async (input) => {
+    withErrorHandler("contribute_knowledge", async (input) => {
       const knowledge = await loadKnowledge();
       const entry: KnowledgeEntry = {
         id: Date.now().toString(36),
@@ -82,10 +83,10 @@ export function registerKnowledgeSharingTools(server: McpServer) {
       return {
         content: [{
           type: "text",
-          text: `✅ Đã đóng góp kiến thức: **${input.topic}** (Stack: ${input.stack}). Kiến thức này sẽ được gợi ý cho các project cùng stack.`,
+          text: `✅ Đã đóng góp kiến thức: **${input.topic}** (Stack: ${input.stack}). Kiến thức này sẽ được gợi ý cho các project cùng stack.` + getChainHint("contribute_knowledge"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Lấy kiến thức dùng chung ────────────
@@ -98,7 +99,7 @@ export function registerKnowledgeSharingTools(server: McpServer) {
       stack: z.string().describe("Tech stack để filter"),
       topic: z.string().optional().describe("Topic cần tìm kiếm"),
     },
-    async ({ stack, topic }) => {
+    withErrorHandler("get_shared_knowledge", async ({ stack, topic }) => {
       const knowledge = await loadKnowledge();
       let matched = knowledge.filter(k => k.stack === stack);
 
@@ -111,7 +112,7 @@ export function registerKnowledgeSharingTools(server: McpServer) {
 
       if (matched.length === 0) {
         return {
-          content: [{ type: "text", text: `📭 Chưa có kiến thức dùng chung cho stack: ${stack}.` }],
+          content: [{ type: "text", text: `📭 Chưa có kiến thức dùng chung cho stack: ${stack}.` + getChainHint("get_shared_knowledge") }],
         };
       }
 
@@ -133,8 +134,8 @@ export function registerKnowledgeSharingTools(server: McpServer) {
       ];
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("get_shared_knowledge") }],
       };
-    }
+    })
   );
 }

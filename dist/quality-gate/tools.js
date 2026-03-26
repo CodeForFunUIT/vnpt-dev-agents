@@ -2,6 +2,7 @@ import { z } from "zod";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { resolveStackProfile } from "../stack-profiles/index.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 const execAsync = promisify(exec);
 // ─────────────────────────────────────────────
 // Code Quality Gate
@@ -21,7 +22,7 @@ export function registerQualityGateTools(server) {
             .describe("Bỏ qua test suite. Dùng khi project chưa có test."),
         baseBranch: z.string().default("develop")
             .describe("Branch gốc để đếm file thay đổi"),
-    }, async ({ projectRoot, stack, skipTests, baseBranch }) => {
+    }, withErrorHandler("check_quality_gate", async ({ projectRoot, stack, skipTests, baseBranch }) => {
         const profile = await resolveStackProfile(stack, projectRoot);
         const checks = [];
         // ── 1. Build / Type check ─────────────────
@@ -106,9 +107,9 @@ export function registerQualityGateTools(server) {
             lines.push("", `⚠️ **Có ${uncommittedCount} file chưa commit.** Hãy commit trước khi tạo PR.`);
         }
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("check_quality_gate") }],
         };
-    });
+    }));
 }
 async function runCheck(command, cwd) {
     try {

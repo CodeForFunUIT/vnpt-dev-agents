@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Smart Estimation Engine
@@ -42,7 +43,7 @@ export function registerEstimationTools(server: McpServer) {
       tags: z.array(z.string()).default([]).describe("Tags liên quan: ['auth', 'form', 'api']"),
       baseEstimation: z.number().optional().describe("Ước tính ban đầu (nếu có)"),
     },
-    async ({ issueType, tags, baseEstimation }) => {
+    withErrorHandler("suggest_estimation", async ({ issueType, tags, baseEstimation }) => {
       let entries: MetricEntry[] = [];
       try {
         const raw = await fs.readFile(await getStorePath(), "utf-8");
@@ -105,8 +106,8 @@ export function registerEstimationTools(server: McpServer) {
       ];
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("suggest_estimation") }],
       };
-    }
+    })
   );
 }

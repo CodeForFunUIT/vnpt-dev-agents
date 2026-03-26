@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { jiraClient } from "../jira/client.js";
 import { resolveStackProfile, type StackProfile, ANGULAR_PROFILE } from "../stack-profiles/index.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // generate_worklog — Tự gen nội dung logwork
@@ -280,7 +281,7 @@ export function registerWorklogTools(server: McpServer) {
           "Nếu autoSubmit=true nhưng tested=false → chặn submit và yêu cầu test trước."
         ),
     },
-    async ({
+    withErrorHandler("generate_worklog", async ({
       issueKey, timeSpent, projectRoot,
       recentFileWindowMinutes, additionalNotes, autoSubmit, stack, tested,
     }) => {
@@ -336,7 +337,7 @@ export function registerWorklogTools(server: McpServer) {
               "1. Test thủ công chức năng đã implement",
               "2. Kiểm tra không có bug phát sinh",
               "3. Gọi lại với `tested: true` khi đã sẵn sàng",
-            ].join("\n"),
+            ].join("\n") + getChainHint("generate_worklog"),
           }],
         };
       }
@@ -354,7 +355,7 @@ export function registerWorklogTools(server: McpServer) {
               "```",
               comment,
               "```",
-            ].join("\n"),
+            ].join("\n") + getChainHint("generate_worklog"),
           }],
         };
       }
@@ -393,9 +394,9 @@ export function registerWorklogTools(server: McpServer) {
             !tested
               ? "\n🧪 **Nhắc nhở:** Hãy test thủ công trước khi submit. Gọi lại với `tested: true` khi sẵn sàng."
               : "",
-          ].filter(Boolean).join("\n"),
+          ].filter(Boolean).join("\n") + getChainHint("generate_worklog"),
         }],
       };
-    }
+    })
   );
 }

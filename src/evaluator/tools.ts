@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { SECURITY_DOMAINS } from "../security/tools.js";
-
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // registerEvaluatorTools
 //
@@ -63,7 +63,7 @@ export function registerEvaluatorTools(server: McpServer) {
       issueType: z.string().optional(),
       priority: z.string().optional(),
     },
-    async ({ issueKey, summary, description, issueType, priority }) => {
+    withErrorHandler("evaluate_task_complexity", async ({ issueKey, summary, description, issueType, priority }) => {
       const text = `${summary} ${description}`.toLowerCase();
       const securityHits: Array<{ domain: string; level: string; description: string }> = [];
  
@@ -111,10 +111,10 @@ export function registerEvaluatorTools(server: McpServer) {
             `4. **Giờ ước tính** — thực tế bao lâu?`,
             `5. **Recommendation** — có nên giao AI không?`,
             `6. **Subtasks** — phân rã nếu task lớn`,
-          ].join("\n"),
+          ].join("\n") + getChainHint("evaluate_task_complexity"),
         }],
       };
-    }
+    })
   );
 }
 

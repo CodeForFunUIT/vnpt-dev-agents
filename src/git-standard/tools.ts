@@ -3,6 +3,7 @@ import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Git Standard — Quy chuẩn Git cho project
@@ -99,7 +100,7 @@ export function registerGitStandardTools(server: McpServer) {
           "Bỏ trống → chỉ trả về quy chuẩn mặc định."
         ),
     },
-    async ({ projectRoot }) => {
+    withErrorHandler("get_git_standard", async ({ projectRoot }) => {
       let result: { filePath: string; content: string; source: string } | null = null;
 
       // Bước 1: Tìm trong project root (nếu có)
@@ -147,10 +148,10 @@ export function registerGitStandardTools(server: McpServer) {
             "---",
             "",
             result.content,
-          ].join("\n"),
+          ].join("\n") + getChainHint("get_git_standard"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Gợi ý tên branch ─────────────────
@@ -168,7 +169,7 @@ export function registerGitStandardTools(server: McpServer) {
         .default("feature")
         .describe("Loại task: feature, fix, docs, refactor, test, chore, hotfix"),
     },
-    async ({ issueKey, summary, issueType }) => {
+    withErrorHandler("suggest_branch_name", async ({ issueKey, summary, issueType }) => {
       const slug = toSlug(summary);
       const shortSlug = slug.split("-").slice(0, 5).join("-"); // Tối đa 5 từ
       const keyLower = issueKey.toLowerCase();
@@ -220,10 +221,10 @@ export function registerGitStandardTools(server: McpServer) {
             `# Ví dụ tạo branch:`,
             `git checkout -b ${unique[0]}`,
             "```",
-          ].join("\n"),
+          ].join("\n") + getChainHint("suggest_branch_name"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 3: Gợi ý commit message ─────────────
@@ -257,7 +258,7 @@ export function registerGitStandardTools(server: McpServer) {
         .default(false)
         .describe("Có phải breaking change không? Nếu true → thêm '!' vào commit"),
     },
-    async ({ type, scope, description, body, issueKey, isBreaking }) => {
+    withErrorHandler("suggest_commit_message", async ({ type, scope, description, body, issueKey, isBreaking }) => {
       // Build commit message theo Conventional Commits
       const scopePart = scope ? `(${scope})` : "";
       const breakingMark = isBreaking ? "!" : "";
@@ -328,10 +329,10 @@ export function registerGitStandardTools(server: McpServer) {
               `git commit -m "${headerLine}" -m "${body ?? ""}" ${issueKey ? `-m "Refs: ${issueKey}"` : ""}`,
             ] : []),
             "```",
-          ].join("\n"),
+          ].join("\n") + getChainHint("suggest_commit_message"),
         }],
       };
-    }
+    })
   );
 }
 

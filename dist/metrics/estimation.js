@@ -1,6 +1,7 @@
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 async function getStorePath() {
     const p = path.join(process.cwd(), "metrics-store.json");
     try {
@@ -19,7 +20,7 @@ export function registerEstimationTools(server) {
         issueType: z.string().default("Task").describe("Loại issue: Task, Bug, Story"),
         tags: z.array(z.string()).default([]).describe("Tags liên quan: ['auth', 'form', 'api']"),
         baseEstimation: z.number().optional().describe("Ước tính ban đầu (nếu có)"),
-    }, async ({ issueType, tags, baseEstimation }) => {
+    }, withErrorHandler("suggest_estimation", async ({ issueType, tags, baseEstimation }) => {
         let entries = [];
         try {
             const raw = await fs.readFile(await getStorePath(), "utf-8");
@@ -73,8 +74,8 @@ export function registerEstimationTools(server) {
             `📌 **Next step:** Dùng \`${suggested}h\` khi điền vào Jira hoặc \`evaluate_task_complexity\`.`
         ];
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("suggest_estimation") }],
         };
-    });
+    }));
 }
 //# sourceMappingURL=estimation.js.map

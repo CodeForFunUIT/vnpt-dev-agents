@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { jiraClient } from "./client.js";
 import { formatIssueForAI, formatIssueListForAI } from "./formatter.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // registerJiraTools: đăng ký tất cả Jira tools
@@ -47,7 +48,7 @@ export function registerJiraTools(server: McpServer) {
         .default(20)
         .describe("Số lượng tối đa issues trả về"),
     },
-    async ({ projectKey, statusFilter, customJql, maxResults }) => {
+    withErrorHandler("list_my_open_issues", async ({ projectKey, statusFilter, customJql, maxResults }) => {
       const projectFilter = projectKey ? `project = ${projectKey} AND ` : "";
 
       // Map statusFilter → JQL conditions
@@ -77,17 +78,17 @@ export function registerJiraTools(server: McpServer) {
 
       if (data.issues.length === 0) {
         return {
-          content: [{ type: "text", text: `✅ Không có issue nào (điều kiện: ${label}).` }],
+          content: [{ type: "text", text: `✅ Không có issue nào (điều kiện: ${label}).` + getChainHint("list_my_open_issues") }],
         };
       }
 
       return {
         content: [{
           type: "text",
-          text: `**Filter:** ${label}\n\n` + formatIssueListForAI(data.issues, data.total),
+          text: `**Filter:** ${label}\n\n` + formatIssueListForAI(data.issues, data.total) + getChainHint("list_my_open_issues"),
         }],
       };
-    }
+    })
   );
 
   server.tool(
@@ -100,7 +101,7 @@ export function registerJiraTools(server: McpServer) {
         .string()
         .describe("Jira issue key, VD: 'VNPTAI-123'"),
     },
-    async ({ issueKey }) => {
+    withErrorHandler("get_issue_detail", async ({ issueKey }) => {
       const issue = await jiraClient.getIssue(issueKey);
  
       // ── Tự động check drift ────────────────────
@@ -111,10 +112,10 @@ export function registerJiraTools(server: McpServer) {
       return {
         content: [{
           type: "text",
-          text: driftWarning + formatIssueForAI(issue),
+          text: driftWarning + formatIssueForAI(issue) + getChainHint("get_issue_detail"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 3: Logwork ──────────────────────────
@@ -136,7 +137,7 @@ export function registerJiraTools(server: McpServer) {
         .string()
         .describe("Mô tả ngắn gọn đã làm gì trong khoảng thời gian này"),
     },
-    async ({ issueKey, timeSpent, comment }) => {
+    withErrorHandler("log_work", async ({ issueKey, timeSpent, comment }) => {
       const result = await jiraClient.addWorklog(issueKey, timeSpent, comment);
       return {
         content: [{
@@ -145,10 +146,10 @@ export function registerJiraTools(server: McpServer) {
                 `📌 Issue: ${issueKey}\n` +
                 `⏱️  Thời gian: ${timeSpent}\n` +
                 `📝 Ghi chú: ${comment}\n` +
-                `🆔 Worklog ID: ${result.id}`,
+                `🆔 Worklog ID: ${result.id}` + getChainHint("log_work"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 4: Cập nhật trạng thái issue ───────
@@ -176,7 +177,7 @@ export function registerJiraTools(server: McpServer) {
         .optional()
         .describe("Ghi chú kèm theo khi chuyển trạng thái. VD: 'Đã fix bug và test trên staging.'"),
     },
-    async ({ issueKey, transitionName, resolution, comment }) => {
+    withErrorHandler("update_issue_status", async ({ issueKey, transitionName, resolution, comment }) => {
       // Lấy danh sách transitions có thể làm
       const transitions = await jiraClient.getTransitions(issueKey);
       const available = transitions.map((t) => `"${t.name}"`).join(", ");
@@ -200,9 +201,9 @@ export function registerJiraTools(server: McpServer) {
       lines.push("", `💡 Các transition có thể dùng: ${available}`);
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("update_issue_status") }],
       };
-    }
+    })
   );
 
   // ── TOOL 5: Xem transitions có thể dùng ─────
@@ -213,16 +214,16 @@ export function registerJiraTools(server: McpServer) {
     {
       issueKey: z.string().describe("Jira issue key"),
     },
-    async ({ issueKey }) => {
+    withErrorHandler("get_available_transitions", async ({ issueKey }) => {
       const transitions = await jiraClient.getTransitions(issueKey);
       const list = transitions.map((t) => `  • ${t.name} (id: ${t.id})`).join("\n");
       return {
         content: [{
           type: "text",
-          text: `Các transition có thể thực hiện cho ${issueKey}:\n${list}`,
+          text: `Các transition có thể thực hiện cho ${issueKey}:\n${list}` + getChainHint("get_available_transitions"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 5b: Thêm comment vào issue ─────────
@@ -235,15 +236,15 @@ export function registerJiraTools(server: McpServer) {
       issueKey: z.string().describe("Jira issue key, VD: 'VNPTAI-123'"),
       comment: z.string().describe("Nội dung comment"),
     },
-    async ({ issueKey, comment }) => {
+    withErrorHandler("add_comment", async ({ issueKey, comment }) => {
       await jiraClient.addComment(issueKey, comment);
       return {
         content: [{
           type: "text",
-          text: `✅ Đã thêm comment vào ${issueKey}:\n\n> ${comment}`,
+          text: `✅ Đã thêm comment vào ${issueKey}:\n\n> ${comment}` + getChainHint("add_comment"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 6: Tạo issue mới ───────────────────
@@ -275,17 +276,17 @@ export function registerJiraTools(server: McpServer) {
         .optional()
         .describe("Danh sách labels, VD: ['backend', 'urgent']"),
     },
-    async (payload) => {
+    withErrorHandler("create_issue", async (payload) => {
       const result = await jiraClient.createIssue(payload);
       return {
         content: [{
           type: "text",
           text: `✅ Đã tạo issue thành công!\n` +
                 `🔑 Key: ${result.key}\n` +
-                `🔗 Link: ${process.env.JIRA_BASE_URL}/browse/${result.key}`,
+                `🔗 Link: ${process.env.JIRA_BASE_URL}/browse/${result.key}` + getChainHint("create_issue"),
         }],
       };
-    }
+    })
   );
 }
 

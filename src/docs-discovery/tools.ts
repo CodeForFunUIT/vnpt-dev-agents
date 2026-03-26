@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Project Docs Discovery
@@ -101,7 +102,7 @@ export function registerDocsDiscoveryTools(server: McpServer) {
       projectRoot: z.string().describe("Đường dẫn tuyệt đối đến thư mục gốc dự án"),
       maxDepth: z.number().default(3).describe("Độ sâu tối đa khi quét. Default: 3"),
     },
-    async ({ projectRoot, maxDepth }) => {
+    withErrorHandler("scan_project_docs", async ({ projectRoot, maxDepth }) => {
       const docs: DocEntry[] = [];
       const visited = new Set<string>();
 
@@ -179,9 +180,9 @@ export function registerDocsDiscoveryTools(server: McpServer) {
       );
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("scan_project_docs") }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Read Project Doc ──────────────────
@@ -195,7 +196,7 @@ export function registerDocsDiscoveryTools(server: McpServer) {
       relativePath: z.string().describe("Đường dẫn tương đối từ project root. VD: 'docs/ARCHITECTURE.md'"),
       maxLines: z.number().default(500).describe("Giới hạn số dòng đọc. Default: 500"),
     },
-    async ({ projectRoot, relativePath, maxLines }) => {
+    withErrorHandler("read_project_doc", async ({ projectRoot, relativePath, maxLines }) => {
       const fullPath = path.join(projectRoot, relativePath);
 
       // Security check: don't allow path traversal
@@ -205,7 +206,7 @@ export function registerDocsDiscoveryTools(server: McpServer) {
         return {
           content: [{
             type: "text",
-            text: "❌ Lỗi bảo mật: Đường dẫn file nằm ngoài thư mục dự án. Không cho phép đọc.",
+            text: "❌ Lỗi bảo mật: Đường dẫn file nằm ngoài thư mục dự án. Không cho phép đọc." + getChainHint("read_project_doc"),
           }],
         };
       }
@@ -227,18 +228,18 @@ export function registerDocsDiscoveryTools(server: McpServer) {
               displayContent,
               "```",
               truncated ? `\n⚠️ File bị cắt (${lines.length - maxLines} dòng còn lại). Tăng \`maxLines\` nếu cần.` : "",
-            ].join("\n"),
+            ].join("\n") + getChainHint("read_project_doc"),
           }],
         };
       } catch {
         return {
           content: [{
             type: "text",
-            text: `❌ Không thể đọc file: \`${relativePath}\`. Kiểm tra lại đường dẫn.`,
+            text: `❌ Không thể đọc file: \`${relativePath}\`. Kiểm tra lại đường dẫn.` + getChainHint("read_project_doc"),
           }],
         };
       }
-    }
+    })
   );
 }
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // Project Docs Discovery
 //
@@ -75,7 +76,7 @@ export function registerDocsDiscoveryTools(server) {
         "Dùng ĐẦU TIÊN trước khi implement để biết dự án có những tài liệu gì.", {
         projectRoot: z.string().describe("Đường dẫn tuyệt đối đến thư mục gốc dự án"),
         maxDepth: z.number().default(3).describe("Độ sâu tối đa khi quét. Default: 3"),
-    }, async ({ projectRoot, maxDepth }) => {
+    }, withErrorHandler("scan_project_docs", async ({ projectRoot, maxDepth }) => {
         const docs = [];
         const visited = new Set();
         // Scan each candidate directory
@@ -137,9 +138,9 @@ export function registerDocsDiscoveryTools(server) {
         }
         lines.push("---", "## 🤖 Hướng dẫn cho AI", "- Tự động gọi `read_project_doc` cho các file 🔴 **Quan trọng** trước khi implement.", "- Chỉ đọc file 🟡 khi task liên quan đến workflow/rules cụ thể.", "- KHÔNG cần đọc file ⚪ trừ khi user yêu cầu.");
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("scan_project_docs") }],
         };
-    });
+    }));
     // ── TOOL 2: Read Project Doc ──────────────────
     server.tool("read_project_doc", "Đọc nội dung 1 file tài liệu bất kỳ trong dự án. " +
         "Dùng sau `scan_project_docs` để đọc chi tiết các file quan trọng. " +
@@ -147,7 +148,7 @@ export function registerDocsDiscoveryTools(server) {
         projectRoot: z.string().describe("Đường dẫn tuyệt đối đến thư mục gốc dự án"),
         relativePath: z.string().describe("Đường dẫn tương đối từ project root. VD: 'docs/ARCHITECTURE.md'"),
         maxLines: z.number().default(500).describe("Giới hạn số dòng đọc. Default: 500"),
-    }, async ({ projectRoot, relativePath, maxLines }) => {
+    }, withErrorHandler("read_project_doc", async ({ projectRoot, relativePath, maxLines }) => {
         const fullPath = path.join(projectRoot, relativePath);
         // Security check: don't allow path traversal
         const resolved = path.resolve(fullPath);
@@ -156,7 +157,7 @@ export function registerDocsDiscoveryTools(server) {
             return {
                 content: [{
                         type: "text",
-                        text: "❌ Lỗi bảo mật: Đường dẫn file nằm ngoài thư mục dự án. Không cho phép đọc.",
+                        text: "❌ Lỗi bảo mật: Đường dẫn file nằm ngoài thư mục dự án. Không cho phép đọc." + getChainHint("read_project_doc"),
                     }],
             };
         }
@@ -176,7 +177,7 @@ export function registerDocsDiscoveryTools(server) {
                             displayContent,
                             "```",
                             truncated ? `\n⚠️ File bị cắt (${lines.length - maxLines} dòng còn lại). Tăng \`maxLines\` nếu cần.` : "",
-                        ].join("\n"),
+                        ].join("\n") + getChainHint("read_project_doc"),
                     }],
             };
         }
@@ -184,11 +185,11 @@ export function registerDocsDiscoveryTools(server) {
             return {
                 content: [{
                         type: "text",
-                        text: `❌ Không thể đọc file: \`${relativePath}\`. Kiểm tra lại đường dẫn.`,
+                        text: `❌ Không thể đọc file: \`${relativePath}\`. Kiểm tra lại đường dẫn.` + getChainHint("read_project_doc"),
                     }],
             };
         }
-    });
+    }));
 }
 // ── Helper: Recursive directory scanner ──────
 async function scanDirectory(dirPath, projectRoot, results, visited, depth, maxDepth) {

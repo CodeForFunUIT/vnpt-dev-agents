@@ -2,6 +2,7 @@ import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 async function getSessionDir() {
@@ -48,7 +49,7 @@ export function registerSessionTools(server) {
             .describe("Tên branch đã tạo"),
         securityLevel: z.string().optional()
             .describe("Security flag level: NONE/MEDIUM/HIGH/CRITICAL"),
-    }, async (args) => {
+    }, withErrorHandler("save_session", async (args) => {
         const session = {
             issueKey: args.issueKey,
             summary: args.summary,
@@ -83,15 +84,15 @@ export function registerSessionTools(server) {
                         "",
                         "---",
                         '📌 Khi quay lại, nói: _"tiếp tục ' + args.issueKey + '"_ → AI sẽ load context này.',
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("save_session"),
                 }],
         };
-    });
+    }));
     // ── TOOL 2: Load session context ────────────
     server.tool("load_session", "Khôi phục context đã lưu của một task. " +
         "Gọi khi user nói 'tiếp tục VNPTAI-123' hoặc khi bắt đầu phiên mới.", {
         issueKey: z.string().describe("Jira issue key cần load context"),
-    }, async ({ issueKey }) => {
+    }, withErrorHandler("load_session", async ({ issueKey }) => {
         const session = await loadSession(issueKey);
         if (!session) {
             return {
@@ -105,7 +106,7 @@ export function registerSessionTools(server) {
                             "## Gợi ý",
                             `- Gọi \`task_kickoff\` để bắt đầu mới`,
                             `- Hoặc \`get_issue_detail\` để xem thông tin task`,
-                        ].join("\n"),
+                        ].join("\n") + getChainHint("load_session"),
                     }],
             };
         }
@@ -144,13 +145,13 @@ export function registerSessionTools(server) {
                         "",
                         "---",
                         `📌 **Tiếp tục từ bước:** ${getNextStep(session.status)}`,
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("load_session"),
                 }],
         };
-    });
+    }));
     // ── TOOL 3: List all sessions ───────────────
     server.tool("list_sessions", "Xem danh sách tất cả sessions đang active. " +
-        "Dùng khi user hỏi 'tôi đang làm task gì?'", {}, async () => {
+        "Dùng khi user hỏi 'tôi đang làm task gì?'", {}, withErrorHandler("list_sessions", async () => {
         const dir = await getSessionDir();
         let files;
         try {
@@ -163,7 +164,7 @@ export function registerSessionTools(server) {
             return {
                 content: [{
                         type: "text",
-                        text: "📭 Không có session nào. Bắt đầu task mới bằng `task_kickoff`.",
+                        text: "📭 Không có session nào. Bắt đầu task mới bằng `task_kickoff`." + getChainHint("list_sessions"),
                     }],
             };
         }
@@ -195,9 +196,9 @@ export function registerSessionTools(server) {
             "Dùng `load_session` với issueKey để tiếp tục task.",
         ];
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("list_sessions") }],
         };
-    });
+    }));
 }
 // ── Helper ──────────────────────────────────
 function getNextStep(status) {

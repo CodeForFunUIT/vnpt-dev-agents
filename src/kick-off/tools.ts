@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { jiraClient } from "../jira/client.js";
 import { resolveStackProfile } from "../stack-profiles/index.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // task_kickoff — Entry point cho mọi task
@@ -39,7 +40,7 @@ export function registerKickoffTools(server: McpServer) {
         .default("auto")
         .describe("Tech stack. 'auto' = tự detect. Hoặc chỉ định cụ thể."),
     },
-    async ({ issueKey, projectRoot, stack }) => {
+    withErrorHandler("task_kickoff", async ({ issueKey, projectRoot, stack }) => {
 
       // ── 1. Đọc task từ Jira ───────────────────
       const issue = await jiraClient.getIssue(issueKey);
@@ -206,9 +207,9 @@ export function registerKickoffTools(server: McpServer) {
             ``,
             `---`,
             `📌 **Next step:** → \`scan_project_docs\` + \`detect_files_from_task\` để lấy context, hoặc \`generate_gwt_description\` nếu description chưa chuẩn.`,
-          ].filter(s => s !== undefined).join("\n"),
+          ].filter(s => s !== undefined).join("\n") + getChainHint("task_kickoff"),
         }],
       };
-    }
+    })
   );
 }

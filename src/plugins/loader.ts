@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import fs from "fs/promises";
 import path from "path";
 import { pathToFileURL } from "url";
-
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // Plugin System
 //
@@ -66,12 +66,12 @@ export function registerPluginTools(server: McpServer) {
     {
       projectRoot: z.string().describe("Đường dẫn project root"),
     },
-    async ({ projectRoot }) => {
+    withErrorHandler("reload_plugins", async ({ projectRoot }) => {
       await loadProjectPlugins(server, projectRoot);
       return {
-        content: [{ type: "text", text: "✅ Đã scan và reload plugins từ project." }],
+        content: [{ type: "text", text: "✅ Đã scan và reload plugins từ project." + getChainHint("reload_plugins") }],
       };
-    }
+    })
   );
 }
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // registerTeamContextTools
 //
@@ -49,7 +50,7 @@ export function registerTeamContextTools(server) {
             .optional()
             .describe("Đường dẫn đến TEAM_CONTEXT.md. " +
             "Mặc định: tìm trong thư mục gốc của vnpt-dev-agent."),
-    }, async ({ taskDescription, sections, contextFilePath }) => {
+    }, withErrorHandler("get_team_context", async ({ taskDescription, sections, contextFilePath }) => {
         const filePath = contextFilePath ?? await findContextFile();
         if (!filePath) {
             return {
@@ -87,9 +88,9 @@ export function registerTeamContextTools(server) {
         }
         const output = buildContextOutput(parsed, targetSections, !!taskDescription);
         return {
-            content: [{ type: "text", text: output }],
+            content: [{ type: "text", text: output + getChainHint("get_team_context") }],
         };
-    });
+    }));
     // ── TOOL 2: Cập nhật team context ────────────
     server.tool("update_team_context", "Thêm hoặc cập nhật một entry vào TEAM_CONTEXT.md. " +
         "Dùng khi phát hiện tribal knowledge mới trong quá trình làm việc: " +
@@ -115,7 +116,7 @@ export function registerTeamContextTools(server) {
             .string()
             .optional()
             .describe("Đường dẫn đến TEAM_CONTEXT.md"),
-    }, async ({ section, entry, reason, contextFilePath }) => {
+    }, withErrorHandler("update_team_context", async ({ section, entry, reason, contextFilePath }) => {
         const filePath = contextFilePath ?? await findContextFile();
         if (!filePath) {
             throw new Error("Không tìm thấy TEAM_CONTEXT.md. " +
@@ -151,10 +152,10 @@ export function registerTeamContextTools(server) {
                         reason ? `💡 Lý do: ${reason}` : "",
                         "",
                         "Lần sau khi AI làm task liên quan, context này sẽ được tự động inject.",
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("update_team_context"),
                 }],
         };
-    });
+    }));
 }
 // ─────────────────────────────────────────────
 // Helpers

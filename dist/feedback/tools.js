@@ -1,6 +1,7 @@
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ── System prompt cho insights ────────────────
 const INSIGHTS_PROMPT = `Bạn là một senior developer phân tích lịch sử feedback để rút ra bài học.
 
@@ -123,7 +124,7 @@ export function registerFeedbackTools(server) {
             .string()
             .default("")
             .describe("Ghi chú tự do — bất kỳ điều gì đáng nhớ về task này"),
-    }, async ({ issueKey, summary, codeQuality, descriptionQuality, contextAccuracy, estimatedHours, actualHours, whatWorked, whatFailed, usefulContextFiles, noiseContextFiles, newTribalKnowledge, tags, notes, }) => {
+    }, withErrorHandler("submit_task_feedback", async ({ issueKey, summary, codeQuality, descriptionQuality, contextAccuracy, estimatedHours, actualHours, whatWorked, whatFailed, usefulContextFiles, noiseContextFiles, newTribalKnowledge, tags, notes, }) => {
         const store = await loadStore();
         const feedback = {
             id: generateId(),
@@ -183,10 +184,10 @@ export function registerFeedbackTools(server) {
                         "---",
                         `💾 Đã lưu vào feedback-store.json`,
                         `📈 Sau ${Math.max(5, 10 - store.totalTasks)} tasks nữa, chạy \`get_feedback_insights\` để xem patterns.`,
-                    ].join("\n"),
+                    ].join("\n") + getChainHint("submit_task_feedback"),
                 }],
         };
-    });
+    }));
     // ── TOOL 2: Get feedback insights ────────────
     server.tool("get_feedback_insights", "Phân tích toàn bộ lịch sử feedback để rút ra bài học và patterns. " +
         "Trả về: lỗi lặp đi lặp lại, task type AI làm tốt/kém, " +
@@ -201,7 +202,7 @@ export function registerFeedbackTools(server) {
             .number()
             .default(20)
             .describe("Phân tích N task gần nhất. Default: 20"),
-    }, async ({ taskType, lastNTasks }) => {
+    }, withErrorHandler("get_feedback_insights", async ({ taskType, lastNTasks }) => {
         const store = await loadStore();
         if (store.feedbacks.length === 0) {
             return {
@@ -296,10 +297,10 @@ export function registerFeedbackTools(server) {
                         "- Estimation bias và khuyến nghị",
                         "- File context hữu ích vs noise",
                         "- Lời khuyên cụ thể cho task tiếp theo",
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("get_feedback_insights"),
                 }],
         };
-    });
+    }));
     // ── TOOL 3: List feedback history ────────────
     server.tool("list_feedback_history", "Xem danh sách lịch sử feedback các task đã làm. " +
         "Lọc theo issue key, tag, hoặc khoảng thời gian. " +
@@ -308,7 +309,7 @@ export function registerFeedbackTools(server) {
         filterIssueKey: z.string().optional().describe("Tìm issue key cụ thể"),
         lastNDays: z.number().optional().describe("Chỉ hiển thị N ngày gần nhất"),
         showDetails: z.boolean().default(false).describe("Hiện chi tiết từng task hay chỉ summary"),
-    }, async ({ filterTag, filterIssueKey, lastNDays, showDetails }) => {
+    }, withErrorHandler("list_feedback_history", async ({ filterTag, filterIssueKey, lastNDays, showDetails }) => {
         const store = await loadStore();
         let feedbacks = [...store.feedbacks].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
         // Apply filters
@@ -356,9 +357,9 @@ export function registerFeedbackTools(server) {
         const avgRatio = average(feedbacks.map((f) => f.actualHours / f.estimatedHours).filter(isFinite));
         lines.push("---", `**Avg code quality:** ${avgQuality.toFixed(1)}/5`, `**Avg estimation ratio:** ×${avgRatio.toFixed(2)} (1.0 = chính xác)`);
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("list_feedback_history") }],
         };
-    });
+    }));
 }
 // (InsightsResult + formatInsights removed — no longer used after API removal)
 // Utils

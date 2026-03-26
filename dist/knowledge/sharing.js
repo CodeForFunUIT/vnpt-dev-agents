@@ -2,6 +2,7 @@ import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 async function getStorePath() {
@@ -32,7 +33,7 @@ export function registerKnowledgeSharingTools(server) {
         content: z.string().describe("Nội dung chi tiết kiến thức"),
         impact: z.enum(["low", "medium", "high"]).default("medium").describe("Mức độ quan trọng"),
         tags: z.array(z.string()).default([]),
-    }, async (input) => {
+    }, withErrorHandler("contribute_knowledge", async (input) => {
         const knowledge = await loadKnowledge();
         const entry = {
             id: Date.now().toString(36),
@@ -50,17 +51,17 @@ export function registerKnowledgeSharingTools(server) {
         return {
             content: [{
                     type: "text",
-                    text: `✅ Đã đóng góp kiến thức: **${input.topic}** (Stack: ${input.stack}). Kiến thức này sẽ được gợi ý cho các project cùng stack.`,
+                    text: `✅ Đã đóng góp kiến thức: **${input.topic}** (Stack: ${input.stack}). Kiến thức này sẽ được gợi ý cho các project cùng stack.` + getChainHint("contribute_knowledge"),
                 }],
         };
-    });
+    }));
     // ── TOOL 2: Lấy kiến thức dùng chung ────────────
     server.tool("get_shared_knowledge", "Lấy kiến thức dùng chung từ các project khác. " +
         "Dùng để check gotchas/patterns trước khi implement. " +
         "→ Tiếp: `get_team_context` + `get_shared_knowledge`.", {
         stack: z.string().describe("Tech stack để filter"),
         topic: z.string().optional().describe("Topic cần tìm kiếm"),
-    }, async ({ stack, topic }) => {
+    }, withErrorHandler("get_shared_knowledge", async ({ stack, topic }) => {
         const knowledge = await loadKnowledge();
         let matched = knowledge.filter(k => k.stack === stack);
         if (topic) {
@@ -69,7 +70,7 @@ export function registerKnowledgeSharingTools(server) {
         }
         if (matched.length === 0) {
             return {
-                content: [{ type: "text", text: `📭 Chưa có kiến thức dùng chung cho stack: ${stack}.` }],
+                content: [{ type: "text", text: `📭 Chưa có kiến thức dùng chung cho stack: ${stack}.` + getChainHint("get_shared_knowledge") }],
             };
         }
         const impactIcon = { high: "🔴", medium: "🟡", low: "⚪" };
@@ -88,8 +89,8 @@ export function registerKnowledgeSharingTools(server) {
             "📌 Dùng kiến thức này để tránh lặp lại lỗi cũ trong project hiện tại.",
         ];
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("get_shared_knowledge") }],
         };
-    });
+    }));
 }
 //# sourceMappingURL=sharing.js.map

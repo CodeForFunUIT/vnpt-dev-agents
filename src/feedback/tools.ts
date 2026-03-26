@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Feedback Loop — Bổ sung #5
@@ -208,7 +209,7 @@ export function registerFeedbackTools(server: McpServer) {
         .default("")
         .describe("Ghi chú tự do — bất kỳ điều gì đáng nhớ về task này"),
     },
-    async ({
+    withErrorHandler("submit_task_feedback", async ({
       issueKey, summary,
       codeQuality, descriptionQuality, contextAccuracy,
       estimatedHours, actualHours,
@@ -281,10 +282,10 @@ export function registerFeedbackTools(server: McpServer) {
             "---",
             `💾 Đã lưu vào feedback-store.json`,
             `📈 Sau ${Math.max(5, 10 - store.totalTasks)} tasks nữa, chạy \`get_feedback_insights\` để xem patterns.`,
-          ].join("\n"),
+          ].join("\n") + getChainHint("submit_task_feedback"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Get feedback insights ────────────
@@ -305,7 +306,7 @@ export function registerFeedbackTools(server: McpServer) {
         .default(20)
         .describe("Phân tích N task gần nhất. Default: 20"),
     },
-    async ({ taskType, lastNTasks }) => {
+    withErrorHandler("get_feedback_insights", async ({ taskType, lastNTasks }) => {
       const store = await loadStore();
 
       if (store.feedbacks.length === 0) {
@@ -413,10 +414,10 @@ export function registerFeedbackTools(server: McpServer) {
             "- Estimation bias và khuyến nghị",
             "- File context hữu ích vs noise",
             "- Lời khuyên cụ thể cho task tiếp theo",
-          ].filter(Boolean).join("\n"),
+          ].filter(Boolean).join("\n") + getChainHint("get_feedback_insights"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 3: List feedback history ────────────
@@ -431,7 +432,7 @@ export function registerFeedbackTools(server: McpServer) {
       lastNDays: z.number().optional().describe("Chỉ hiển thị N ngày gần nhất"),
       showDetails: z.boolean().default(false).describe("Hiện chi tiết từng task hay chỉ summary"),
     },
-    async ({ filterTag, filterIssueKey, lastNDays, showDetails }) => {
+    withErrorHandler("list_feedback_history", async ({ filterTag, filterIssueKey, lastNDays, showDetails }) => {
       const store = await loadStore();
 
       let feedbacks = [...store.feedbacks].sort(
@@ -499,9 +500,9 @@ export function registerFeedbackTools(server: McpServer) {
       );
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("list_feedback_history") }],
       };
-    }
+    })
   );
 }
 

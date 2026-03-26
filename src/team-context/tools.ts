@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // registerTeamContextTools
@@ -64,7 +65,7 @@ export function registerTeamContextTools(server: McpServer) {
           "Mặc định: tìm trong thư mục gốc của vnpt-dev-agent."
         ),
     },
-    async ({ taskDescription, sections, contextFilePath }) => {
+    withErrorHandler("get_team_context", async ({ taskDescription, sections, contextFilePath }) => {
       const filePath = contextFilePath ?? await findContextFile();
 
       if (!filePath) {
@@ -106,9 +107,9 @@ export function registerTeamContextTools(server: McpServer) {
       const output = buildContextOutput(parsed, targetSections, !!taskDescription);
 
       return {
-        content: [{ type: "text", text: output }],
+        content: [{ type: "text", text: output + getChainHint("get_team_context") }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Cập nhật team context ────────────
@@ -140,7 +141,7 @@ export function registerTeamContextTools(server: McpServer) {
         .optional()
         .describe("Đường dẫn đến TEAM_CONTEXT.md"),
     },
-    async ({ section, entry, reason, contextFilePath }) => {
+    withErrorHandler("update_team_context", async ({ section, entry, reason, contextFilePath }) => {
       const filePath = contextFilePath ?? await findContextFile();
 
       if (!filePath) {
@@ -191,10 +192,10 @@ export function registerTeamContextTools(server: McpServer) {
             reason ? `💡 Lý do: ${reason}` : "",
             "",
             "Lần sau khi AI làm task liên quan, context này sẽ được tự động inject.",
-          ].filter(Boolean).join("\n"),
+          ].filter(Boolean).join("\n") + getChainHint("update_team_context"),
         }],
       };
-    }
+    })
   );
 }
 

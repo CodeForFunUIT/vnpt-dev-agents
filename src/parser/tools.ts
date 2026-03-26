@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { jiraClient } from "../jira/client.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Description Parser — Tool bổ trợ cho format
@@ -85,7 +86,7 @@ export function registerParserTools(server: McpServer) {
     {
       issueKey: z.string().describe("Jira issue key"),
     },
-    async ({ issueKey }) => {
+    withErrorHandler("parse_description", async ({ issueKey }) => {
       const issue = await jiraClient.getIssue(issueKey);
       const description: string = issue.fields.description ?? "";
       const summary: string = issue.fields.summary ?? "";
@@ -96,10 +97,10 @@ export function registerParserTools(server: McpServer) {
       return {
         content: [{
           type: "text",
-          text: formatParsedResult(issueKey, summary, issueType, parsed),
+          text: formatParsedResult(issueKey, summary, issueType, parsed) + getChainHint("parse_description"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL: Validate format compliance ─────────
@@ -112,7 +113,7 @@ export function registerParserTools(server: McpServer) {
     {
       issueKey: z.string().describe("Jira issue key"),
     },
-    async ({ issueKey }) => {
+    withErrorHandler("check_format_compliance", async ({ issueKey }) => {
       const issue = await jiraClient.getIssue(issueKey);
       const description: string = issue.fields.description ?? "";
       const issueType: string = issue.fields.issuetype?.name ?? "Task";
@@ -196,9 +197,9 @@ export function registerParserTools(server: McpServer) {
       }
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("check_format_compliance") }],
       };
-    }
+    })
   );
 }
 

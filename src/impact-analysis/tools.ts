@@ -5,6 +5,7 @@ import { promisify } from "util";
 import { resolveStackProfile } from "../stack-profiles/index.js";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 const execAsync = promisify(exec);
 
@@ -33,7 +34,7 @@ export function registerImpactTools(server: McpServer) {
       depth: z.number().default(2)
         .describe("Số tầng dependency cần quét. Default: 2"),
     },
-    async ({ filePaths, projectRoot, stack, depth }) => {
+    withErrorHandler("analyze_impact", async ({ filePaths, projectRoot, stack, depth }) => {
 
       const profile = await resolveStackProfile(stack, projectRoot);
       const importPattern = getImportPattern(profile.name);
@@ -143,9 +144,9 @@ export function registerImpactTools(server: McpServer) {
       );
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + getChainHint("analyze_impact") }],
       };
-    }
+    })
   );
 }
 

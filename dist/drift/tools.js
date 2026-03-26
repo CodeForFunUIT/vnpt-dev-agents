@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { jiraClient } from "../jira/client.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // Description Drift — Bổ sung #4
 //
@@ -70,7 +71,7 @@ Quy tắc:
 export function registerDriftTools(server) {
     server.tool("check_description_drift", "Phân tích signals drift trong Jira task: tuổi task, số comment sau update, " +
         "keywords thay đổi trong comments. Trả về raw signals để Claude đánh giá " +
-        "mức độ drift và khuyến nghị có nên đọc lại requirements không.", { issueKey: z.string() }, async ({ issueKey }) => {
+        "mức độ drift và khuyến nghị có nên đọc lại requirements không.", { issueKey: z.string() }, withErrorHandler("check_description_drift", async ({ issueKey }) => {
         const issue = await jiraClient.getIssue(issueKey);
         const fields = issue.fields;
         const now = new Date();
@@ -114,13 +115,13 @@ export function registerDriftTools(server) {
                         `- Drift score (0-100)`,
                         `- Mức độ: HIGH/MEDIUM/LOW`,
                         `- Có cần chạy extract_latest_requirements không?`,
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("check_description_drift"),
                 }],
         };
-    });
+    }));
     server.tool("extract_latest_requirements", "Đọc description gốc VÀ toàn bộ comments của Jira task. " +
         "Trả về raw data để Claude tổng hợp requirement thực tế hiện tại, " +
-        "xác định requirement đã thay đổi, bị hủy, hoặc phát sinh mới.", { issueKey: z.string() }, async ({ issueKey }) => {
+        "xác định requirement đã thay đổi, bị hủy, hoặc phát sinh mới.", { issueKey: z.string() }, withErrorHandler("extract_latest_requirements", async ({ issueKey }) => {
         const issue = await jiraClient.getIssue(issueKey);
         const fields = issue.fields;
         const comments = fields.comment?.comments ?? [];
@@ -152,10 +153,10 @@ export function registerDriftTools(server) {
                         `- **changed**: requirement đã thay đổi (gốc → hiện tại)`,
                         `- **ambiguous**: điểm vẫn còn mơ hồ cần hỏi lại`,
                         `- **recommendation**: khuyến nghị trước khi implement`,
-                    ].filter(Boolean).join("\n"),
+                    ].filter(Boolean).join("\n") + getChainHint("extract_latest_requirements"),
                 }],
         };
-    });
+    }));
 }
 function formatDriftAnalysis(issueKey, summary, r) {
     const lines = [

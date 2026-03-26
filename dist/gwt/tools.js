@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 // ─────────────────────────────────────────────
 // registerGwtTools
 //
@@ -100,7 +101,7 @@ export function registerGwtTools(server) {
         currentDescription: z.string(),
         additionalContext: z.string().optional(),
         featureType: z.enum(["form", "list", "detail", "api-integration", "navigation", "dashboard", "bug-fix", "refactor", "other"]).default("other"),
-    }, async ({ issueKey, currentSummary, currentDescription, additionalContext, featureType }) => {
+    }, withErrorHandler("generate_gwt_description", async ({ issueKey, currentSummary, currentDescription, additionalContext, featureType }) => {
         return {
             content: [{
                     type: "text",
@@ -135,16 +136,16 @@ export function registerGwtTools(server) {
                         `- [File/module cần sửa]`,
                         `- [Pattern cần follow]`,
                         `- [API endpoint]`,
-                    ].filter(s => s !== undefined).join("\n"),
+                    ].filter(s => s !== undefined).join("\n") + getChainHint("generate_gwt_description"),
                 }],
         };
-    });
+    }));
     server.tool("validate_description_quality", "Trả về description để Claude tự chấm điểm chất lượng. " +
         "Claude sẽ đánh giá: specificity, completeness, testability, technical context " +
         "và trả về grade A-F cùng với các từ/câu còn mơ hồ cần sửa.", {
         issueKey: z.string(),
         description: z.string(),
-    }, async ({ issueKey, description }) => {
+    }, withErrorHandler("validate_description_quality", async ({ issueKey, description }) => {
         const scenarioCount = (description.match(/^### Scenario/gm) ?? []).length;
         const checklistCount = (description.match(/^- \[[ x]\]/gm) ?? []).length;
         const hasSections = (key) => new RegExp(`^## \\[${key}\\]`, "m").test(description);
@@ -174,10 +175,10 @@ export function registerGwtTools(server) {
                         `- Từ/câu mơ hồ cụ thể cần sửa`,
                         `- Scenarios còn thiếu`,
                         `- Recommendation`,
-                    ].join("\n"),
+                    ].join("\n") + getChainHint("validate_description_quality"),
                 }],
         };
-    });
+    }));
 }
 function formatValidation(issueKey, r) {
     const bar = (score, len = 8) => "█".repeat(Math.round((score / 100) * len)) + "░".repeat(len - Math.round((score / 100) * len));

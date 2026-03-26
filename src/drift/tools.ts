@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { jiraClient } from "../jira/client.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Description Drift — Bổ sung #4
@@ -84,7 +85,7 @@ export function registerDriftTools(server: McpServer) {
     "keywords thay đổi trong comments. Trả về raw signals để Claude đánh giá " +
     "mức độ drift và khuyến nghị có nên đọc lại requirements không.",
     { issueKey: z.string() },
-    async ({ issueKey }) => {
+    withErrorHandler("check_description_drift", async ({ issueKey }) => {
       const issue = await jiraClient.getIssue(issueKey);
       const fields = issue.fields;
       const now = new Date();
@@ -138,10 +139,10 @@ export function registerDriftTools(server: McpServer) {
             `- Drift score (0-100)`,
             `- Mức độ: HIGH/MEDIUM/LOW`,
             `- Có cần chạy extract_latest_requirements không?`,
-          ].filter(Boolean).join("\n"),
+          ].filter(Boolean).join("\n") + getChainHint("check_description_drift"),
         }],
       };
-    }
+    })
   );
  
   server.tool(
@@ -150,7 +151,7 @@ export function registerDriftTools(server: McpServer) {
     "Trả về raw data để Claude tổng hợp requirement thực tế hiện tại, " +
     "xác định requirement đã thay đổi, bị hủy, hoặc phát sinh mới.",
     { issueKey: z.string() },
-    async ({ issueKey }) => {
+    withErrorHandler("extract_latest_requirements", async ({ issueKey }) => {
       const issue = await jiraClient.getIssue(issueKey);
       const fields = issue.fields;
       const comments: Array<{ author: { displayName: string }; body: string; created: string }> =
@@ -185,10 +186,10 @@ export function registerDriftTools(server: McpServer) {
             `- **changed**: requirement đã thay đổi (gốc → hiện tại)`,
             `- **ambiguous**: điểm vẫn còn mơ hồ cần hỏi lại`,
             `- **recommendation**: khuyến nghị trước khi implement`,
-          ].filter(Boolean).join("\n"),
+          ].filter(Boolean).join("\n") + getChainHint("extract_latest_requirements"),
         }],
       };
-    }
+    })
   );
 }
 

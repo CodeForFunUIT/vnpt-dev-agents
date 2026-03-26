@@ -22,9 +22,9 @@ export function formatToolError(toolName, error, suggestions) {
  * Tự động bắt lỗi và trả về format chuẩn thay vì crash.
  */
 export function withErrorHandler(toolName, handler, errorSuggestions) {
-    return async (args) => {
+    return async (args, extra) => {
         try {
-            return await handler(args);
+            return await handler(args, extra);
         }
         catch (error) {
             console.error(`[${toolName}] Error:`, error);

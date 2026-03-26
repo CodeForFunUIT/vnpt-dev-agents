@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { pathToFileURL } from "url";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 export async function loadProjectPlugins(server, projectRoot) {
     const pluginDir = path.join(projectRoot, ".mcp-plugins");
     try {
@@ -38,12 +39,12 @@ export function registerPluginTools(server) {
     server.tool("reload_plugins", "Scan và load lại plugins từ folder `.mcp-plugins/` trong project root. " +
         "Dùng khi bạn vừa tạo thêm tool mới trong plugin.", {
         projectRoot: z.string().describe("Đường dẫn project root"),
-    }, async ({ projectRoot }) => {
+    }, withErrorHandler("reload_plugins", async ({ projectRoot }) => {
         await loadProjectPlugins(server, projectRoot);
         return {
-            content: [{ type: "text", text: "✅ Đã scan và reload plugins từ project." }],
+            content: [{ type: "text", text: "✅ Đã scan và reload plugins từ project." + getChainHint("reload_plugins") }],
         };
-    });
+    }));
 }
 import { z } from "zod";
 //# sourceMappingURL=loader.js.map

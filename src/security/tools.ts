@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Security Tools — Bổ sung #3
@@ -142,7 +143,7 @@ export function registerSecurityTools(server: McpServer) {
         .default(true)
         .describe("Tự động đọc SECURITY_PATTERNS.md để bổ sung context"),
     },
-    async ({ issueKey, summary, description, autoLoadPatterns }) => {
+    withErrorHandler("check_security_flag", async ({ issueKey, summary, description, autoLoadPatterns }) => {
       const text = `${summary} ${description}`.toLowerCase();
 
       // Detect security domains
@@ -191,10 +192,10 @@ export function registerSecurityTools(server: McpServer) {
       return {
         content: [{
           type: "text",
-          text: formatSecurityFlag(issueKey, summary, overallLevel, detected, patternsContext),
+          text: formatSecurityFlag(issueKey, summary, overallLevel, detected, patternsContext) + getChainHint("check_security_flag"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Security review checklist ────────
@@ -217,7 +218,7 @@ export function registerSecurityTools(server: McpServer) {
           "Nếu bỏ trống sẽ auto-detect lại."
         ),
     },
-    async ({ issueKey, summary, description, detectedDomains }) => {
+    withErrorHandler("security_review_checklist", async ({ issueKey, summary, description, detectedDomains }) => {
       // Auto-detect domains nếu không truyền vào
       let domains = detectedDomains ?? [];
       if (domains.length === 0) {
@@ -282,10 +283,10 @@ export function registerSecurityTools(server: McpServer) {
             "```",
             "",
             "⚠️ Sau khi phân tích xong, hãy trình bày checklist dưới dạng bảng markdown dễ đọc.",
-          ].join("\n"),
+          ].join("\n") + getChainHint("security_review_checklist"),
         }],
       };
-    }
+    })
   );
 }
 

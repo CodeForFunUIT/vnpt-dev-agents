@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // registerGwtTools
@@ -112,7 +113,7 @@ server.tool(
       additionalContext: z.string().optional(),
       featureType: z.enum(["form","list","detail","api-integration","navigation","dashboard","bug-fix","refactor","other"]).default("other"),
     },
-    async ({ issueKey, currentSummary, currentDescription, additionalContext, featureType }) => {
+    withErrorHandler("generate_gwt_description", async ({ issueKey, currentSummary, currentDescription, additionalContext, featureType }) => {
       return {
         content: [{
           type: "text",
@@ -147,10 +148,10 @@ server.tool(
             `- [File/module cần sửa]`,
             `- [Pattern cần follow]`,
             `- [API endpoint]`,
-          ].filter(s => s !== undefined).join("\n"),
+          ].filter(s => s !== undefined).join("\n") + getChainHint("generate_gwt_description"),
         }],
       };
-    }
+    })
   );
  
   server.tool(
@@ -162,7 +163,7 @@ server.tool(
       issueKey: z.string(),
       description: z.string(),
     },
-    async ({ issueKey, description }) => {
+    withErrorHandler("validate_description_quality", async ({ issueKey, description }) => {
       const scenarioCount = (description.match(/^### Scenario/gm) ?? []).length;
       const checklistCount = (description.match(/^- \[[ x]\]/gm) ?? []).length;
       const hasSections = (key: string) => new RegExp(`^## \\[${key}\\]`, "m").test(description);
@@ -193,10 +194,10 @@ server.tool(
             `- Từ/câu mơ hồ cụ thể cần sửa`,
             `- Scenarios còn thiếu`,
             `- Recommendation`,
-          ].join("\n"),
+          ].join("\n") + getChainHint("validate_description_quality"),
         }],
       };
-    }
+    })
   );
 }
 

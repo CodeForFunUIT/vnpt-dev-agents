@@ -4,6 +4,7 @@ import { CodebaseReader } from "./reader.js";
 import { SmartScorer } from "./scorer.js";
 import path from "path";
 import { resolveStackProfile, type StackName } from "../stack-profiles/index.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ── Stack enum cho tool params ────────────────
 const STACK_ENUM = z.enum(["auto", "angular", "spring", "nestjs", "flutter", "react", "generic"])
@@ -38,14 +39,14 @@ export function registerCodebaseTools(server: McpServer) {
       includeContent: z.boolean().default(true).describe("Có đọc nội dung file luôn không, hay chỉ trả về đường dẫn"),
       stack: STACK_ENUM,
     },
-    async ({ name, projectRoot, includeContent, stack }) => {
+    withErrorHandler("find_by_name", async ({ name, projectRoot, includeContent, stack }) => {
       const profile = await resolveStackProfile(stack, projectRoot);
       reader.setProfile(profile);
       const results = await reader.findByName(name, projectRoot, includeContent);
 
       if (results.length === 0) {
         return {
-          content: [{ type: "text", text: `❌ Không tìm thấy file nào chứa "${name}" trong ${projectRoot}` }],
+          content: [{ type: "text", text: `❌ Không tìm thấy file nào chứa "${name}" trong ${projectRoot}` + getChainHint("find_by_name") }],
         };
       }
 
@@ -58,10 +59,10 @@ export function registerCodebaseTools(server: McpServer) {
       return {
         content: [{
           type: "text",
-          text: `# Kết quả tìm kiếm: "${name}" (${results.length} file)\n\n${output}`,
+          text: `# Kết quả tìm kiếm: "${name}" (${results.length} file)\n\n${output}` + getChainHint("find_by_name"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Tìm file theo keyword ───────────────────────
@@ -81,7 +82,7 @@ export function registerCodebaseTools(server: McpServer) {
       showContext: z.boolean().default(true).describe("Hiển thị 3 dòng xung quanh mỗi match"),
       stack: STACK_ENUM,
     },
-    async ({ keyword, projectRoot, fileExtensions, maxResults, showContext, stack }) => {
+    withErrorHandler("search_keyword", async ({ keyword, projectRoot, fileExtensions, maxResults, showContext, stack }) => {
       const profile = await resolveStackProfile(stack, projectRoot);
       reader.setProfile(profile);
       // Nếu user không chỉ định extensions → dùng từ profile
@@ -90,7 +91,7 @@ export function registerCodebaseTools(server: McpServer) {
 
       if (results.length === 0) {
         return {
-          content: [{ type: "text", text: `❌ Không tìm thấy keyword "${keyword}" trong codebase` }],
+          content: [{ type: "text", text: `❌ Không tìm thấy keyword "${keyword}" trong codebase` + getChainHint("search_keyword") }],
         };
       }
 
@@ -106,10 +107,10 @@ export function registerCodebaseTools(server: McpServer) {
       return {
         content: [{
           type: "text",
-          text: `# Tìm kiếm: "${keyword}" — ${results.length} file có kết quả\n\n${output}`,
+          text: `# Tìm kiếm: "${keyword}" — ${results.length} file có kết quả\n\n${output}` + getChainHint("search_keyword"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 3: Đọc toàn bộ 1 module/folder ────────────────
@@ -125,7 +126,7 @@ export function registerCodebaseTools(server: McpServer) {
       maxFileSizeKb: z.number().default(50).describe("Bỏ qua file lớn hơn X KB"),
       stack: STACK_ENUM,
     },
-    async ({ modulePath, includeHtml, includeScss, maxFileSizeKb, stack }) => {
+    withErrorHandler("read_module", async ({ modulePath, includeHtml, includeScss, maxFileSizeKb, stack }) => {
       // readModule không có projectRoot → dùng modulePath parent để detect
       const profile = await resolveStackProfile(stack, path.dirname(modulePath));
       reader.setProfile(profile);
@@ -133,7 +134,7 @@ export function registerCodebaseTools(server: McpServer) {
 
       if (result.files.length === 0) {
         return {
-          content: [{ type: "text", text: `❌ Không tìm thấy file nào trong: ${modulePath}` }],
+          content: [{ type: "text", text: `❌ Không tìm thấy file nào trong: ${modulePath}` + getChainHint("read_module") }],
         };
       }
 
@@ -157,10 +158,10 @@ export function registerCodebaseTools(server: McpServer) {
             "",
             "## 📋 Nội dung",
             fileContents,
-          ].join("\n"),
+          ].join("\n") + getChainHint("read_module"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 4: Tự động detect file từ Jira task ────────────
@@ -178,7 +179,7 @@ export function registerCodebaseTools(server: McpServer) {
       libsFolder: z.string().default("libs").describe("Tên folder chứa shared libs. Mặc định: 'libs'"),
       stack: STACK_ENUM,
     },
-    async ({ issueKey, taskSummary, taskDescription, projectRoot, appsFolder, libsFolder, stack }) => {
+    withErrorHandler("detect_files_from_task", async ({ issueKey, taskSummary, taskDescription, projectRoot, appsFolder, libsFolder, stack }) => {
       // Bước 0: Resolve stack profile
       const profile = await resolveStackProfile(stack, projectRoot);
       reader.setProfile(profile);
@@ -248,7 +249,7 @@ export function registerCodebaseTools(server: McpServer) {
               "",
               "## 💡 Gợi ý",
               "Dựa vào cấu trúc trên, hãy cho tôi biết bạn muốn tạo feature mới ở thư mục nào?",
-            ].join("\n"),
+            ].join("\n") + getChainHint("detect_files_from_task"),
           }],
         };
       }
@@ -296,10 +297,10 @@ export function registerCodebaseTools(server: McpServer) {
             "1. Phân tích chi tiết và đề xuất hướng implement?",
             "2. Generate code ngay?",
             "3. Tạo sub-tasks nhỏ hơn?",
-          ].join("\n"),
+          ].join("\n") + getChainHint("detect_files_from_task"),
         }],
       };
-    }
+    })
   );
    // ── TOOL 5 (mới): Rank context files ─────────
   server.tool(
@@ -319,7 +320,7 @@ export function registerCodebaseTools(server: McpServer) {
       topK: z.number().min(1).max(7).default(5)
         .describe("Số file muốn giữ lại sau ranking"),
     },
-    async ({ issueKey, taskSummary, taskDescription, filePaths, projectRoot, topK }) => {
+    withErrorHandler("rank_context_files", async ({ issueKey, taskSummary, taskDescription, filePaths, projectRoot, topK }) => {
       // ── Đọc nội dung các file ────────────────
       const fileContents: Array<{ path: string; snippet: string }> = [];
  
@@ -365,10 +366,10 @@ export function registerCodebaseTools(server: McpServer) {
             "",
             "❌ Loại bỏ:",
             "- `path/to/other.ts` — _Lý do không liên quan_",
-          ].join("\n"),
+          ].join("\n") + getChainHint("rank_context_files"),
         }],
       };
-    }
+    })
   );
 }
 
@@ -433,7 +434,7 @@ export function registerEvaluatorTools(server: McpServer) {
       issueType: z.string().optional().describe("Loại issue: Task, Bug, Story..."),
       priority: z.string().optional().describe("Độ ưu tiên: High, Medium, Low..."),
     },
-    async ({ issueKey, summary, description, issueType, priority }) => {
+    withErrorHandler("evaluate_task_complexity", async ({ issueKey, summary, description, issueType, priority }) => {
       // Trả về data + prompt để model của user tự đánh giá
       return {
         content: [{
@@ -467,10 +468,10 @@ export function registerEvaluatorTools(server: McpServer) {
             "- 📋 Subtasks gợi ý",
             "- ❓ Thông tin còn thiếu",
             "- 💡 Khuyến nghị: nên giao AI hay developer tự làm?",
-          ].join("\n"),
+          ].join("\n") + getChainHint("evaluate_task_complexity"),
         }],
       };
-    }
+    })
   );
 }
 

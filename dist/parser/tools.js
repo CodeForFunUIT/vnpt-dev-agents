@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { jiraClient } from "../jira/client.js";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 export function registerParserTools(server) {
     // ── TOOL: Parse description ───────────────────
     server.tool("parse_description", "Đọc và parse description của một Jira issue theo format chuẩn VNPT. " +
@@ -7,7 +8,7 @@ export function registerParserTools(server) {
         "quality signals để tự động chuẩn bị context cho các tools khác. " +
         "Dùng đầu tiên khi nhận task mới — thay thế việc đọc description thủ công.", {
         issueKey: z.string().describe("Jira issue key"),
-    }, async ({ issueKey }) => {
+    }, withErrorHandler("parse_description", async ({ issueKey }) => {
         const issue = await jiraClient.getIssue(issueKey);
         const description = issue.fields.description ?? "";
         const summary = issue.fields.summary ?? "";
@@ -16,17 +17,17 @@ export function registerParserTools(server) {
         return {
             content: [{
                     type: "text",
-                    text: formatParsedResult(issueKey, summary, issueType, parsed),
+                    text: formatParsedResult(issueKey, summary, issueType, parsed) + getChainHint("parse_description"),
                 }],
         };
-    });
+    }));
     // ── TOOL: Validate format compliance ─────────
     server.tool("check_format_compliance", "Kiểm tra description của task có đúng format chuẩn VNPT không. " +
         "Trả về danh sách sections còn thiếu, ước tính grade chất lượng, " +
         "và hướng dẫn cụ thể để hoàn thiện. " +
         "Chạy trước khi giao AI implement để đảm bảo input chất lượng cao.", {
         issueKey: z.string().describe("Jira issue key"),
-    }, async ({ issueKey }) => {
+    }, withErrorHandler("check_format_compliance", async ({ issueKey }) => {
         const issue = await jiraClient.getIssue(issueKey);
         const description = issue.fields.description ?? "";
         const issueType = issue.fields.issuetype?.name ?? "Task";
@@ -89,9 +90,9 @@ export function registerParserTools(server) {
             lines.push("---", `✅ **Sẵn sàng!** Description đủ tốt. Tiếp theo: chạy \`evaluate_task_complexity\` để đánh giá effort.`);
         }
         return {
-            content: [{ type: "text", text: lines.join("\n") }],
+            content: [{ type: "text", text: lines.join("\n") + getChainHint("check_format_compliance") }],
         };
-    });
+    }));
 }
 // ─────────────────────────────────────────────
 // Parser Engine

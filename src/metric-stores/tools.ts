@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { withErrorHandler, getChainHint } from "../shared/index.js";
 
 // ─────────────────────────────────────────────
 // Metrics Tracking — Bổ sung #7
@@ -161,7 +162,7 @@ export function registerMetricsTools(server: McpServer) {
       sprint: z.string().optional()
         .describe("Tên sprint. VD: 'Sprint 42'"),
     },
-    async (input) => {
+    withErrorHandler("track_metric", async (input) => {
       const store = await loadStore();
 
       // Tính cycle time nếu có đủ dữ liệu
@@ -233,10 +234,10 @@ export function registerMetricsTools(server: McpServer) {
             store.entries.length >= 10
               ? "📊 Đã đủ data — dùng `get_metrics_report` để xem báo cáo!"
               : `📊 Cần thêm ${10 - store.entries.length} tasks nữa để có báo cáo đủ ý nghĩa`,
-          ].filter(Boolean).join("\n"),
+          ].filter(Boolean).join("\n") + getChainHint("track_metric"),
         }],
       };
-    }
+    })
   );
 
   // ── TOOL 2: Get metrics report ────────────────
@@ -256,7 +257,7 @@ export function registerMetricsTools(server: McpServer) {
       compareLastNSprints: z.number().optional()
         .describe("So sánh N sprints gần nhất với nhau"),
     },
-    async ({ lastNDays, sprint, filterTag, compareLastNSprints }) => {
+    withErrorHandler("get_metrics_report", async ({ lastNDays, sprint, filterTag, compareLastNSprints }) => {
       const store = await loadStore();
 
       if (store.entries.length === 0) {
@@ -409,9 +410,9 @@ export function registerMetricsTools(server: McpServer) {
       }
 
       return {
-        content: [{ type: "text", text: lines.filter(Boolean).join("\n") }],
+        content: [{ type: "text", text: lines.filter(Boolean).join("\n") + getChainHint("get_metrics_report") }],
       };
-    }
+    })
   );
 
   // ── TOOL 3: Get metrics dashboard (HTML) ─────
@@ -424,7 +425,7 @@ export function registerMetricsTools(server: McpServer) {
       lastNDays: z.number().default(30)
         .describe("Hiển thị N ngày gần nhất. Default: 30"),
     },
-    async ({ lastNDays }) => {
+    withErrorHandler("get_metrics_dashboard", async ({ lastNDays }) => {
       const store = await loadStore();
 
       const cutoff = new Date();
@@ -466,9 +467,9 @@ export function registerMetricsTools(server: McpServer) {
       );
 
       return {
-        content: [{ type: "text", text: html }],
+        content: [{ type: "text", text: html + getChainHint("get_metrics_dashboard") }],
       };
-    }
+    })
   );
 }
 
