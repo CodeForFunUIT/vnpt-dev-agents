@@ -100,6 +100,8 @@ export declare class JiraClient {
         spda: string;
         congDoan: string;
         dueDate: string;
+        assignee?: string;
+        epicKey?: string;
     }): Promise<any>;
     /**
      * Fallback: đọc custom field options từ issue gần nhất trong project
@@ -111,6 +113,53 @@ export declare class JiraClient {
      * So sánh: exact match → lowercase match → contains match
      */
     private findBestOption;
+    /**
+     * Wrapper của findBestOption với error message thông minh:
+     * - Nếu match → trả về { id, value }
+     * - Nếu không match → throw lỗi kèm top-3 gợi ý ranked by similarity
+     * @param fieldLabel - Tên field hiển thị trong error, VD: "Mã SPDA"
+     */
+    private resolveCustomFieldOption;
+    /**
+     * Lấy danh sách users có thể assign cho project
+     * Jira Server endpoint: /user/assignable/search
+     */
+    getAssignableUsers(projectKey: string): Promise<{
+        key: string;
+        name: string;
+        displayName: string;
+        emailAddress?: string;
+    }[]>;
+    /**
+     * Tìm danh sách Epic đang mở trong project
+     * Dùng để hiển thị gợi ý khi tạo issue mới
+     */
+    searchEpics(projectKey: string): Promise<{
+        key: string;
+        fields: {
+            summary: string;
+            status: {
+                name: string;
+            };
+        };
+    }[]>;
+    /**
+     * Fuzzy-resolve assignee username từ danh sách assignable users.
+     * Ưu tiên: exact name → exact displayName → contains name/displayName/email
+     * Nếu không tìm thấy → throw error kèm top-3 gợi ý gần nhất.
+     */
+    private resolveAssignee;
+    /**
+     * Fuzzy-resolve Epic key từ danh sách epics đang mở.
+     * Ưu tiên: exact key → contains key → contains summary
+     * Nếu không tìm thấy → throw error kèm top-3 gợi ý gần nhất.
+     */
+    private resolveEpicKey;
+    /**
+     * Tính độ tương đồng đơn giản giữa 2 chuỗi (0-1)
+     * Dùng để sắp xếp gợi ý khi fuzzy match không ra kết quả
+     */
+    private calcSimilarity;
 }
 export declare const jiraClient: JiraClient;
 //# sourceMappingURL=client.d.ts.map
