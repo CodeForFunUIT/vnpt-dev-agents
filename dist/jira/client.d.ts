@@ -47,7 +47,47 @@ export declare class JiraClient {
      */
     addComment(issueKey: string, body: string): Promise<any>;
     /**
-     * Tạo issue mới — dùng cho feature tạo sub-task từ .md
+     * Lấy danh sách field + allowed values cho việc tạo issue
+     * Gọi endpoint QuickCreateIssue (VNPT Jira Server)
+     * Response là JSON array với editHtml escaped — parse bằng regex
+     */
+    getCreateMeta(_projectKey: string, _issueTypeName: string): Promise<{
+        projectId: string;
+        projectKey: string;
+        issueTypeId: string;
+        issueTypeName: string;
+        fields: Record<string, {
+            name: string;
+            required: boolean;
+            schema: {
+                type: string;
+                custom?: string;
+            };
+            allowedValues?: Array<{
+                id: string;
+                value?: string;
+                name?: string;
+            }>;
+        }>;
+    }>;
+    /**
+     * Parse 1 field từ response QuickCreateIssue
+     * Response chứa JSON: {"id":"fieldId","label":"...",editHtml":"...escaped HTML..."}
+     * editHtml chứa <option value="id">text</option> dạng escaped
+     */
+    private parseFieldFromQuickCreate;
+    /**
+     * Lấy giá trị custom field từ một issue đã tồn tại
+     * Dùng làm fallback khi createmeta chậm/không khả dụng
+     */
+    getCustomFieldFromIssue(issueKey: string, fieldIds: string[]): Promise<Record<string, {
+        id: string;
+        value: string;
+    } | null>>;
+    /**
+     * Tạo issue mới
+     * Hỗ trợ truyền custom field bằng value (tên) — sẽ tự resolve ID
+     * Nếu truyền sai tên, API sẽ báo lỗi rõ ràng
      */
     createIssue(payload: {
         projectKey: string;
@@ -55,9 +95,22 @@ export declare class JiraClient {
         description: string;
         issueType: string;
         parentKey?: string;
-        priority?: string;
-        labels?: string[];
+        priority: string;
+        labels: string[];
+        spda: string;
+        congDoan: string;
+        dueDate: string;
     }): Promise<any>;
+    /**
+     * Fallback: đọc custom field options từ issue gần nhất trong project
+     * Nhanh hơn createmeta nhiều — chỉ cần 1 API call
+     */
+    private resolveOptionsFromExistingIssue;
+    /**
+     * Tìm option khớp nhất từ danh sách allowedValues
+     * So sánh: exact match → lowercase match → contains match
+     */
+    private findBestOption;
 }
 export declare const jiraClient: JiraClient;
 //# sourceMappingURL=client.d.ts.map

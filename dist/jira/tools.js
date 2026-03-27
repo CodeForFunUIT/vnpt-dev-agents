@@ -201,6 +201,16 @@ export function registerJiraTools(server) {
     server.tool("create_issue", "Tạo một Jira issue mới (Task, Sub-task, Bug, Story). " +
         "Dùng khi phân rã một task lớn thành các sub-task nhỏ hơn, " +
         "hoặc khi tạo task từ file mô tả nghiệp vụ .md. " +
+        "Nếu người dùng yêu cầu tạo task mới như 'tạo task mới cho tôi nhé', hãy yêu cầu họ cung cấp các thông tin dựa trên ví dụ sau:\n" +
+        "- Dự án (Project Key): GOCONNECT\n" +
+        "- Loại Issue: Task\n" +
+        "- Tiêu đề: Phối hợp thực AM UBNB Hoài Hôi\n" +
+        "- Mô tả: Phối hợp thực AM UBNB Hoài Hôi\n" +
+        "- Mức độ ưu tiên: Low\n" +
+        "- Nhãn (Labels): GoConnect\n" +
+        "- Mã SPDA: VNPT GoConnect\n" +
+        "- Công đoạn: Nghiên cứu và phát triển\n" +
+        "- Due Date: 2026-04-03\n" +
         "⚠️ PHẢI hỏi user xác nhận TRƯỚC KHI gọi tool này — hiển thị nội dung issue sẽ tạo cho user duyệt.", {
         projectKey: z.string().describe("Project key, VD: 'VNPTAI'"),
         summary: z.string().describe("Tiêu đề ngắn gọn của issue"),
@@ -215,12 +225,19 @@ export function registerJiraTools(server) {
             .describe("Key của issue cha — bắt buộc nếu issueType là Sub-task"),
         priority: z
             .enum(["Highest", "High", "Medium", "Low", "Lowest"])
-            .optional()
             .describe("Mức độ ưu tiên"),
         labels: z
             .array(z.string())
-            .optional()
             .describe("Danh sách labels, VD: ['backend', 'urgent']"),
+        spda: z
+            .string()
+            .describe("Mã SPDA (customfield_10100). VD: 'VNPT GoConnect'"),
+        congDoan: z
+            .string()
+            .describe("Công đoạn (customfield_10101). VD: 'Nghiên cứu và phát triển', 'Triển khai'"),
+        dueDate: z
+            .string()
+            .describe("Ngày hết hạn, format YYYY-MM-DD. VD: '2026-04-15'."),
     }, withErrorHandler("create_issue", async (payload) => {
         const result = await jiraClient.createIssue(payload);
         return {
@@ -231,6 +248,75 @@ export function registerJiraTools(server) {
                         `🔗 Link: ${process.env.JIRA_BASE_URL}/browse/${result.key}` + getChainHint("create_issue"),
                 }],
         };
+    }));
+    // ── TOOL 7: Lấy metadata tạo issue ─────────
+    server.tool("get_create_meta", "Lấy danh sách các giá trị hợp lệ (options) cho các field khi tạo issue. " +
+        "Trả về allowed values cho custom fields như SPDA, Công đoạn, Issue Type. " +
+        "Dùng TRƯỚC khi tạo issue để biết chính xác giá trị nào được phép.", {
+        projectKey: z.string().describe("Project key, VD: 'GOCONNECT'"),
+        issueTypeName: z
+            .string()
+            .default("Task")
+            .describe("Loại issue: 'Task', 'Sub-task', 'Bug', 'Story'"),
+    }, withErrorHandler("get_create_meta", async ({ projectKey, issueTypeName }) => {
+        // Thử createmeta API trước
+        try {
+            const meta = await jiraClient.getCreateMeta(projectKey, issueTypeName);
+            const lines = [
+                `📋 Create Meta — ${meta.projectKey} / ${meta.issueTypeName}`,
+                "",
+            ];
+            for (const [fieldId, field] of Object.entries(meta.fields)) {
+                if (field.allowedValues && field.allowedValues.length > 0) {
+                    lines.push(`### ${field.name} (${fieldId})`);
+                    lines.push(`Required: ${field.required ? "✅" : "❌"}`);
+                    lines.push("Options:");
+                    for (const opt of field.allowedValues) {
+                        const label = opt.value || opt.name || "N/A";
+                        lines.push(`  • id: ${opt.id} → "${label}"`);
+                    }
+                    lines.push("");
+                }
+            }
+            return {
+                content: [{
+                        type: "text",
+                        text: lines.join("\n") + getChainHint("get_create_meta"),
+                    }],
+            };
+        }
+        catch {
+            // Fallback: createmeta không khả dụng → tìm issue gần nhất rồi đọc custom fields
+            const searchData = await jiraClient.searchIssues(`project = ${projectKey} ORDER BY created DESC`, 1);
+            const latestIssue = searchData.issues?.[0];
+            if (!latestIssue) {
+                return {
+                    content: [{ type: "text", text: `❌ Không tìm thấy issue nào trong project ${projectKey}` }],
+                };
+            }
+            const cfData = await jiraClient.getCustomFieldFromIssue(latestIssue.key, ["customfield_10100", "customfield_10101"]);
+            const lines = [
+                `📋 Create Meta (fallback) — ${projectKey} / ${issueTypeName}`,
+                `⚠️ API createmeta không khả dụng — đọc từ issue gần nhất`,
+                "",
+            ];
+            if (cfData.customfield_10100) {
+                lines.push(`### SPDA (customfield_10100)`);
+                lines.push(`  • id: ${cfData.customfield_10100.id} → "${cfData.customfield_10100.value}"`);
+                lines.push("");
+            }
+            if (cfData.customfield_10101) {
+                lines.push(`### Công đoạn (customfield_10101)`);
+                lines.push(`  • id: ${cfData.customfield_10101.id} → "${cfData.customfield_10101.value}"`);
+                lines.push("");
+            }
+            return {
+                content: [{
+                        type: "text",
+                        text: lines.join("\n") + getChainHint("get_create_meta"),
+                    }],
+            };
+        }
     }));
 }
 // ─────────────────────────────────────────────
