@@ -2,6 +2,11 @@ export declare class JiraClient {
     private http;
     constructor();
     /**
+     * Cập nhật PAT tại runtime — tạo lại axios instance
+     * với Bearer token mới mà không cần restart server
+     */
+    updatePat(newPat: string): void;
+    /**
      * Lấy danh sách issues theo JQL
      * JQL (Jira Query Language) cực kỳ mạnh, ví dụ:
      *   assignee = currentUser() AND status = Open

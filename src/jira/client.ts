@@ -60,6 +60,48 @@ export class JiraClient {
     );
   }
 
+  /**
+   * Cập nhật PAT tại runtime — tạo lại axios instance
+   * với Bearer token mới mà không cần restart server
+   */
+  updatePat(newPat: string) {
+    const baseURL = process.env.JIRA_BASE_URL;
+    if (!baseURL) {
+      throw new Error("Thiếu biến môi trường: JIRA_BASE_URL");
+    }
+
+    this.http = axios.create({
+      baseURL: `${baseURL}/rest/api/2`,
+      headers: {
+        Authorization: `Bearer ${newPat}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      timeout: 15000,
+    });
+
+    // Re-register interceptor
+    this.http.interceptors.response.use(
+      (res) => res,
+      (err) => {
+        const status = err.response?.status;
+        const data = err.response?.data;
+        const parts: string[] = [];
+        if (data?.errorMessages?.length) {
+          parts.push(data.errorMessages.join(", "));
+        }
+        if (data?.errors && Object.keys(data.errors).length > 0) {
+          const fieldErrors = Object.entries(data.errors)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join("; ");
+          parts.push(fieldErrors);
+        }
+        const msg = parts.length > 0 ? parts.join(" | ") : err.message;
+        return Promise.reject(new Error(`Jira API [${status}]: ${msg}`));
+      }
+    );
+  }
+
   // ─── ISSUES ───────────────────────────────
 
   /**

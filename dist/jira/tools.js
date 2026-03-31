@@ -2,6 +2,7 @@ import { z } from "zod";
 import { jiraClient } from "./client.js";
 import { formatIssueForAI, formatIssueListForAI } from "./formatter.js";
 import { withErrorHandler, getChainHint } from "../shared/index.js";
+import { getCurrentPat, updatePat, validatePat } from "./pat-manager.js";
 // ─────────────────────────────────────────────
 // registerJiraTools: đăng ký tất cả Jira tools
 //
@@ -351,6 +352,91 @@ export function registerJiraTools(server) {
                     type: "text",
                     text: lines.join("\n") + getChainHint("get_create_meta"),
                 }],
+        };
+    }));
+    // ── TOOL 8: Quản lý Jira PAT ────────────────
+    server.tool("manage_jira_pat", "Quản lý Personal Access Token (PAT) của Jira. " +
+        "Hỗ trợ 2 hành động:\n" +
+        "- 'view': Xem PAT hiện tại (đã mask) và đường dẫn file .env\n" +
+        "- 'update': Cập nhật PAT mới — ghi vào .env và reload ngay trong session hiện tại\n" +
+        "Dùng khi PAT hết hạn, bị revoke, hoặc cần đổi sang account khác.\n" +
+        "⚠️ PHẢI xác nhận với user TRƯỚC KHI cập nhật PAT.", {
+        action: z
+            .enum(["view", "update"])
+            .describe("Hành động: 'view' = xem PAT hiện tại (masked), 'update' = cập nhật PAT mới"),
+        newPat: z
+            .string()
+            .optional()
+            .describe("PAT mới — bắt buộc khi action = 'update'. Lấy tại: Jira → Profile → Personal Access Tokens → Create Token"),
+    }, withErrorHandler("manage_jira_pat", async ({ action, newPat }) => {
+        if (action === "view") {
+            const info = getCurrentPat();
+            const lines = [
+                `🔑 **Jira PAT — Thông tin hiện tại**`,
+                "",
+                `📁 File .env: \`${info.envPath}\``,
+                `📄 File tồn tại: ${info.exists ? "✅ Có" : "❌ Không"}`,
+                `🔐 PAT hiện tại: \`${info.masked}\``,
+                `🌐 Jira URL: \`${process.env.JIRA_BASE_URL || "(chưa cấu hình)"}\``,
+            ];
+            if (!info.pat) {
+                lines.push("", "⚠️ **PAT chưa được cấu hình hoặc file .env không tồn tại.**", "Hướng dẫn lấy PAT:", "1. Đăng nhập Jira → Click avatar → Profile", "2. Vào Personal Access Tokens → Create Token", "3. Copy token và dùng action 'update' để cập nhật");
+            }
+            return {
+                content: [{ type: "text", text: lines.join("\n") }],
+            };
+        }
+        // ── Action: update ──
+        if (!newPat) {
+            return {
+                content: [{
+                        type: "text",
+                        text: "❌ Thiếu tham số `newPat`. Khi action = 'update', bạn phải cung cấp PAT mới.\n\n" +
+                            "Hướng dẫn lấy PAT:\n" +
+                            "1. Đăng nhập Jira → Click avatar → Profile\n" +
+                            "2. Vào Personal Access Tokens → Create Token\n" +
+                            "3. Copy token và truyền vào tham số `newPat`",
+                    }],
+            };
+        }
+        // Validate PAT
+        const validation = validatePat(newPat);
+        if (!validation.valid) {
+            return {
+                content: [{
+                        type: "text",
+                        text: `❌ PAT không hợp lệ: ${validation.reason}`,
+                    }],
+            };
+        }
+        // Cập nhật .env + process.env
+        const result = updatePat(newPat);
+        // Reload JiraClient để dùng PAT mới ngay
+        try {
+            jiraClient.updatePat(newPat);
+        }
+        catch (e) {
+            return {
+                content: [{
+                        type: "text",
+                        text: `⚠️ Đã cập nhật .env nhưng không thể reload JiraClient: ${e.message}\n` +
+                            "Khởi động lại MCP Server để áp dụng PAT mới.",
+                    }],
+            };
+        }
+        const lines = [
+            `✅ **Đã ${result.action === "updated" ? "cập nhật" : "thêm"} PAT thành công!**`,
+            "",
+            `📁 File: \`${result.envPath}\``,
+            `🔐 PAT cũ: \`${result.previousMasked}\``,
+            `🔐 PAT mới: \`${result.newMasked}\``,
+            "",
+            "🔄 JiraClient đã được reload — các API call tiếp theo sẽ dùng PAT mới.",
+            "",
+            "💡 Để kiểm tra PAT hoạt động, thử gọi `list_my_open_issues` để xem issues.",
+        ];
+        return {
+            content: [{ type: "text", text: lines.join("\n") }],
         };
     }));
 }
