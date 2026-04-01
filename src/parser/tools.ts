@@ -12,7 +12,7 @@ import { withErrorHandler, getChainHint } from "../shared/index.js";
 // các tool khác — không cần nhập lại tay.
 //
 // Ví dụ workflow:
-//   1. parse_description("VNPTAI-123")
+//   1. parse_description("PROJ-123")
 //   2. AI nhận được: type, tags, feature_type,
 //      security_sensitive, estimated_complexity
 //   3. Tự động gọi đúng tools với đúng params
@@ -79,7 +79,7 @@ export function registerParserTools(server: McpServer) {
   // ── TOOL: Parse description ───────────────────
   server.tool(
     "parse_description",
-    "Đọc và parse description của một Jira issue theo format chuẩn VNPT. " +
+    "Đọc và parse description của một Jira issue theo format chuẩn. " +
     "Trích xuất [AI_METADATA], scenarios, done_when checklist và phân tích " +
     "quality signals để tự động chuẩn bị context cho các tools khác. " +
     "Dùng đầu tiên khi nhận task mới — thay thế việc đọc description thủ công.",
@@ -106,7 +106,7 @@ export function registerParserTools(server: McpServer) {
   // ── TOOL: Validate format compliance ─────────
   server.tool(
     "check_format_compliance",
-    "Kiểm tra description của task có đúng format chuẩn VNPT không. " +
+    "Kiểm tra description của task có đúng format chuẩn không. " +
     "Trả về danh sách sections còn thiếu, ước tính grade chất lượng, " +
     "và hướng dẫn cụ thể để hoàn thiện. " +
     "Chạy trước khi giao AI implement để đảm bảo input chất lượng cao.",

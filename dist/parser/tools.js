@@ -3,7 +3,7 @@ import { jiraClient } from "../jira/client.js";
 import { withErrorHandler, getChainHint } from "../shared/index.js";
 export function registerParserTools(server) {
     // ── TOOL: Parse description ───────────────────
-    server.tool("parse_description", "Đọc và parse description của một Jira issue theo format chuẩn VNPT. " +
+    server.tool("parse_description", "Đọc và parse description của một Jira issue theo format chuẩn. " +
         "Trích xuất [AI_METADATA], scenarios, done_when checklist và phân tích " +
         "quality signals để tự động chuẩn bị context cho các tools khác. " +
         "Dùng đầu tiên khi nhận task mới — thay thế việc đọc description thủ công.", {
@@ -22,7 +22,7 @@ export function registerParserTools(server) {
         };
     }));
     // ── TOOL: Validate format compliance ─────────
-    server.tool("check_format_compliance", "Kiểm tra description của task có đúng format chuẩn VNPT không. " +
+    server.tool("check_format_compliance", "Kiểm tra description của task có đúng format chuẩn không. " +
         "Trả về danh sách sections còn thiếu, ước tính grade chất lượng, " +
         "và hướng dẫn cụ thể để hoàn thiện. " +
         "Chạy trước khi giao AI implement để đảm bảo input chất lượng cao.", {

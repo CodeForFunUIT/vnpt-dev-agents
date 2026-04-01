@@ -1,4 +1,4 @@
-# 🚀 Hướng dẫn Workflow tối ưu cho vnpt-dev-agent MCP
+# 🚀 Hướng dẫn Workflow tối ưu cho mcp-jira MCP
 
 > **Mục đích:** Hướng dẫn người dùng (developer) cách sử dụng MCP Server theo đúng thứ tự để xây dựng context đầy đủ nhất, giúp AI hoàn thành task nhanh và chính xác nhất.
 

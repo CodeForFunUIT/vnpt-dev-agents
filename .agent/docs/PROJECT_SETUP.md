@@ -1,4 +1,4 @@
-# Chuẩn bị Dự án mới (Project Setup) cho VNPT Dev Agent
+# Chuẩn bị Dự án mới (Project Setup) cho MCP Jira Agent
 
 Nếu bạn đưa AI này vào một **dự án hoàn toàn mới** (không phải dự án cũ đã được huấn luyện), bạn **KHÔNG BẮT BUỘC** phải có gì ghê gớm. AI vẫn chạy tốt với kiến thức có sẵn (Global Knowledge). 
 

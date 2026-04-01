@@ -1,4 +1,4 @@
-# TEAM CONTEXT — VNPT AI
+# TEAM CONTEXT — MCP Jira
 # ─────────────────────────────────────────────
 # File này là "bộ nhớ dài hạn" của team.
 # Mọi kiến thức KHÔNG được viết trong code,
@@ -13,7 +13,7 @@
 # ─────────────────────────────────────────────
 
 ## [PROJECT]
-name: VNPT AI Portal
+name: My Project
 type: Angular Monorepo
 main_app: apps/portal
 libs_folder: libs/
@@ -117,7 +117,7 @@ http_client: Angular HttpClient (KHÔNG dùng axios trong Angular)
 # Thuật ngữ nội bộ — AI cần hiểu đúng nghĩa
 # [VD: "BO" = Back Office portal, khác với "portal" là user-facing app]
 # [VD: "ticket" trong context này là support ticket, không phải Jira ticket]
-# [VD: "sync" nghĩa là đồng bộ dữ liệu với hệ thống legacy VNPT]
+# [VD: "sync" nghĩa là đồng bộ dữ liệu với hệ thống legacy]
 # [Thêm glossary của team bạn vào đây]
 
 ## [LAST_UPDATED]

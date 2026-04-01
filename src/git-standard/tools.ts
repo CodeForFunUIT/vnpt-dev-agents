@@ -87,7 +87,7 @@ export function registerGitStandardTools(server: McpServer) {
     "get_git_standard",
     "Đọc quy chuẩn Git (commit message, branch naming, workflow) cho project hiện tại. " +
     "Nếu project có file GIT_STANDARD.md riêng → dùng file đó. " +
-    "Nếu không có → dùng quy chuẩn mặc định của VNPT. " +
+    "Nếu không có → dùng quy chuẩn mặc định. " +
     "LUÔN gọi tool này TRƯỚC KHI tạo branch, commit, hoặc PR " +
     "để đảm bảo tuân thủ đúng quy chuẩn của project.",
     {
@@ -159,10 +159,10 @@ export function registerGitStandardTools(server: McpServer) {
     "suggest_branch_name",
     "Gợi ý tên branch theo đúng quy chuẩn Git của project. " +
     "Dựa vào Jira issue key, loại task, và mô tả để sinh tên branch chuẩn. " +
-    "VD: 'feature/VNPTAI-123-add-user-profile'. " +
+    "VD: 'feature/PROJ-123-add-user-profile'. " +
     "⚠️ PHẢI hiển thị gợi ý cho user chọn — không tự động tạo branch.",
     {
-      issueKey: z.string().describe("Jira issue key. VD: 'VNPTAI-123'"),
+      issueKey: z.string().describe("Jira issue key. VD: 'PROJ-123'"),
       summary: z.string().describe("Tiêu đề task từ Jira"),
       issueType: z
         .enum(["feature", "fix", "docs", "refactor", "test", "chore", "hotfix"])
@@ -252,7 +252,7 @@ export function registerGitStandardTools(server: McpServer) {
       issueKey: z
         .string()
         .optional()
-        .describe("Jira issue key để thêm vào footer. VD: 'VNPTAI-123'"),
+        .describe("Jira issue key để thêm vào footer. VD: 'PROJ-123'"),
       isBreaking: z
         .boolean()
         .default(false)

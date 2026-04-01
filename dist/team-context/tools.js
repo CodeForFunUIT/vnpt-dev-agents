@@ -49,7 +49,7 @@ export function registerTeamContextTools(server) {
             .string()
             .optional()
             .describe("Đường dẫn đến TEAM_CONTEXT.md. " +
-            "Mặc định: tìm trong thư mục gốc của vnpt-dev-agent."),
+            "Mặc định: tìm trong thư mục gốc của mcp-jira."),
     }, withErrorHandler("get_team_context", async ({ taskDescription, sections, contextFilePath }) => {
         const filePath = contextFilePath ?? await findContextFile();
         if (!filePath) {
@@ -60,7 +60,7 @@ export function registerTeamContextTools(server) {
                             "⚠️ Không tìm thấy file TEAM_CONTEXT.md!",
                             "",
                             "Hãy tạo file này tại thư mục gốc của project:",
-                            "  D:\\learn\\vnpt-dev-agent\\TEAM_CONTEXT.md",
+                            "  D:\\learn\\mcp-jira\\TEAM_CONTEXT.md",
                             "",
                             "File này rất quan trọng — nó chứa tribal knowledge của team",
                             "để AI không generate code sai convention.",
@@ -120,7 +120,7 @@ export function registerTeamContextTools(server) {
         const filePath = contextFilePath ?? await findContextFile();
         if (!filePath) {
             throw new Error("Không tìm thấy TEAM_CONTEXT.md. " +
-                "Hãy tạo file tại thư mục gốc của vnpt-dev-agent.");
+                "Hãy tạo file tại thư mục gốc của mcp-jira.");
         }
         let content = await fs.readFile(filePath, "utf-8");
         // Tìm vị trí section để thêm entry vào
@@ -244,7 +244,7 @@ function detectRelevantSections(taskDescription) {
  */
 function buildContextOutput(parsed, targetSections, isFiltered) {
     const lines = [
-        "# 📚 Team Context — VNPT AI",
+        "# 📚 Team Context — MCP Jira",
         isFiltered ? "_Đã filter theo task — chỉ hiển thị sections liên quan_" : "_Toàn bộ context_",
         "",
     ];

@@ -1,6 +1,6 @@
-# VNPT Dev Agent — Quickstart Guide 🚀
+# MCP Jira Agent — Quickstart Guide 🚀
 
-Chào mừng bạn đến với **VNPT Dev Agent** (MCP Server)! 
+Chào mừng bạn đến với **MCP Jira Agent** (MCP Server)! 
 
 Nếu bạn là Developer mới tinh vào dự án (ví dụ: dự án GoConnect) và không biết làm thế nào để AI tự động code giúp bạn, hãy làm theo đúng **3 bước cực kỳ đơn giản** dưới đây.
 

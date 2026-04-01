@@ -1,4 +1,4 @@
-# SECURITY PATTERNS — VNPT AI Angular Project
+# SECURITY PATTERNS — Angular Project
 # ─────────────────────────────────────────────
 # File này là checklist bảo mật cho AI khi generate code.
 # AI sẽ đọc file này MỖI KHI task liên quan đến security.
@@ -69,7 +69,7 @@
 - Lazy load modules bảo mật (auth, admin) — không eager load
 - Route guard PHẢI là async (canActivate trả về Observable/Promise)
 
-## [COMMON_MISTAKES_IN_VNPT]
+## [COMMON_MISTAKES]
 # Những lỗi hay gặp trong dự án
 - [Điền vào khi phát hiện pattern nguy hiểm trong codebase]
 - VD: "AuthGuard hiện tại không check token expiry — đang có PR fix"

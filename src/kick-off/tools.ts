@@ -14,7 +14,7 @@ import { withErrorHandler, getChainHint } from "../shared/index.js";
 //   4. Claude hỏi user → user chọn
 //   5. Claude biết chính xác cần làm gì
 //
-// User chỉ cần nói: "làm task VNPTAI-123"
+// User chỉ cần nói: "làm task PROJ-123"
 // Tool lo phần còn lại.
 // ─────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ export function registerKickoffTools(server: McpServer) {
     "Sau khi nhận kết quả, hỏi user từng câu hỏi và chờ trả lời trước khi tiếp tục. " +
     "→ Tiếp: get_team_context + detect_files_from_task hoặc generate_gwt_description.",
     {
-      issueKey: z.string().describe("Jira issue key. VD: 'VNPTAI-123' hoặc 'GOCONNECT-1260'"),
+      issueKey: z.string().describe("Jira issue key. VD: 'PROJ-123' hoặc 'GOCONNECT-1260'"),
       projectRoot: z.string().optional()
         .describe("Đường dẫn codebase local. VD: 'D:/projects/my-app'. Bỏ trống nếu chưa biết."),
       stack: z.enum(["auto", "angular", "spring", "nestjs", "flutter", "react", "generic"])

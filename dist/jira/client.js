@@ -88,7 +88,7 @@ export class JiraClient {
      * Lấy danh sách issues theo JQL
      * JQL (Jira Query Language) cực kỳ mạnh, ví dụ:
      *   assignee = currentUser() AND status = Open
-     *   project = VNPTAI AND sprint in openSprints()
+     *   project = MYPROJ AND sprint in openSprints()
      */
     async searchIssues(jql, maxResults = 20) {
         const res = await this.http.get("/search", {
@@ -109,14 +109,14 @@ export class JiraClient {
                     "subtasks",
                     "parent",
                     "labels",
-                    "customfield_10016", // Story points (tên field có thể khác ở VNPT)
+                    "customfield_10016", // Story points
                 ].join(","),
             },
         });
         return res.data;
     }
     /**
-     * Lấy chi tiết 1 issue theo key (VD: VNPTAI-123)
+     * Lấy chi tiết 1 issue theo key (VD: PROJ-123)
      * Trả về toàn bộ: description, comments, attachments...
      */
     async getIssue(issueKey) {
@@ -194,7 +194,7 @@ export class JiraClient {
     // ─── METADATA ──────────────────────────────
     /**
      * Lấy danh sách field + allowed values cho việc tạo issue
-     * Gọi endpoint QuickCreateIssue (VNPT Jira Server)
+     * Gọi endpoint QuickCreateIssue (Jira Server)
      * Response là JSON array với editHtml escaped — parse bằng regex
      */
     async getCreateMeta(_projectKey, _issueTypeName) {
@@ -350,8 +350,8 @@ export class JiraClient {
             const resolvedAssignee = await this.resolveAssignee(payload.projectKey, payload.assignee);
             fields.assignee = { name: resolvedAssignee };
         }
-        // Epic Link — customfield_10002 trên Jira Server VNPT
-        // (customfield_10008 là Cloud standard, VNPT Server dùng _10002)
+        // Epic Link — customfield_10002 trên Jira Server
+        // (customfield_10008 là Cloud standard, Server dùng _10002)
         if (payload.epicKey) {
             const resolvedEpicKey = await this.resolveEpicKey(payload.projectKey, payload.epicKey);
             fields.customfield_10002 = resolvedEpicKey;

@@ -6,7 +6,7 @@ import { withErrorHandler, getChainHint } from "../shared/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 async function getSessionDir() {
-    const dir = path.resolve(__dirname, "..", "..", ".vnpt-dev-agent", "sessions");
+    const dir = path.resolve(__dirname, "..", "..", ".mcp-jira", "sessions");
     await fs.mkdir(dir, { recursive: true });
     return dir;
 }
@@ -90,7 +90,7 @@ export function registerSessionTools(server) {
     }));
     // ── TOOL 2: Load session context ────────────
     server.tool("load_session", "Khôi phục context đã lưu của một task. " +
-        "Gọi khi user nói 'tiếp tục VNPTAI-123' hoặc khi bắt đầu phiên mới.", {
+        "Gọi khi user nói 'tiếp tục PROJ-123' hoặc khi bắt đầu phiên mới.", {
         issueKey: z.string().describe("Jira issue key cần load context"),
     }, withErrorHandler("load_session", async ({ issueKey }) => {
         const session = await loadSession(issueKey);

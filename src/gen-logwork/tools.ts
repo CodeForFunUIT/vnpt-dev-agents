@@ -247,7 +247,7 @@ export function registerWorklogTools(server: McpServer) {
     {
       issueKey: z
         .string()
-        .describe("Jira issue key. VD: 'VNPTAI-123'"),
+        .describe("Jira issue key. VD: 'PROJ-123'"),
       timeSpent: z
         .string()
         .describe("Thời gian đã làm theo Jira format: '2h', '1h 30m', '45m'"),

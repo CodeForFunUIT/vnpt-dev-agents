@@ -10,11 +10,11 @@ export declare class JiraClient {
      * Lấy danh sách issues theo JQL
      * JQL (Jira Query Language) cực kỳ mạnh, ví dụ:
      *   assignee = currentUser() AND status = Open
-     *   project = VNPTAI AND sprint in openSprints()
+     *   project = MYPROJ AND sprint in openSprints()
      */
     searchIssues(jql: string, maxResults?: number): Promise<any>;
     /**
-     * Lấy chi tiết 1 issue theo key (VD: VNPTAI-123)
+     * Lấy chi tiết 1 issue theo key (VD: PROJ-123)
      * Trả về toàn bộ: description, comments, attachments...
      */
     getIssue(issueKey: string): Promise<any>;
@@ -53,7 +53,7 @@ export declare class JiraClient {
     addComment(issueKey: string, body: string): Promise<any>;
     /**
      * Lấy danh sách field + allowed values cho việc tạo issue
-     * Gọi endpoint QuickCreateIssue (VNPT Jira Server)
+     * Gọi endpoint QuickCreateIssue (Jira Server)
      * Response là JSON array với editHtml escaped — parse bằng regex
      */
     getCreateMeta(_projectKey: string, _issueTypeName: string): Promise<{

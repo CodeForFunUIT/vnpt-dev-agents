@@ -31,7 +31,7 @@ import { registerDocsDiscoveryTools } from "./docs-discovery/tools.js";
 // và điều phối tới đúng tool handler
 // ─────────────────────────────────────────────
 const server = new McpServer({
-    name: "vnpt-dev-agent",
+    name: "mcp-jira",
     version: "1.0.0",
 });
 // Đăng ký tất cả Jira tools vào server
@@ -102,7 +102,7 @@ async function main() {
         console.error("⚠️ Không thể load project plugins:", e);
     }
     await server.connect(transport);
-    console.error("✅ VNPT Dev Agent MCP Server đang chạy...");
+    console.error("✅ MCP Jira Agent Server đang chạy...");
 }
 main().catch((err) => {
     console.error("❌ Lỗi khởi động server:", err);

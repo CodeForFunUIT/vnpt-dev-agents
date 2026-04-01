@@ -9,9 +9,9 @@ import { withErrorHandler, getChainHint } from "../shared/index.js";
 // Session Context — Task Memory
 //
 // Lưu và khôi phục context giữa các phiên chat.
-// Khi user nói "tiếp tục VNPTAI-123" → load context cũ.
+// Khi user nói "tiếp tục PROJ-123" → load context cũ.
 //
-// Data lưu tại: .vnpt-dev-agent/sessions/<issueKey>.json
+// Data lưu tại: .mcp-jira/sessions/<issueKey>.json
 // ─────────────────────────────────────────────
 
 interface SessionData {
@@ -33,7 +33,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function getSessionDir(): Promise<string> {
-  const dir = path.resolve(__dirname, "..", "..", ".vnpt-dev-agent", "sessions");
+  const dir = path.resolve(__dirname, "..", "..", ".mcp-jira", "sessions");
   await fs.mkdir(dir, { recursive: true });
   return dir;
 }
@@ -132,7 +132,7 @@ export function registerSessionTools(server: McpServer) {
   server.tool(
     "load_session",
     "Khôi phục context đã lưu của một task. " +
-    "Gọi khi user nói 'tiếp tục VNPTAI-123' hoặc khi bắt đầu phiên mới.",
+    "Gọi khi user nói 'tiếp tục PROJ-123' hoặc khi bắt đầu phiên mới.",
     {
       issueKey: z.string().describe("Jira issue key cần load context"),
     },

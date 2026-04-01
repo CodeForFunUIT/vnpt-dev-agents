@@ -44,7 +44,7 @@ export function registerJiraTools(server) {
         projectKey: z
             .string()
             .optional()
-            .describe("Filter theo project key cụ thể, VD: 'VNPTAI'. Bỏ trống = tất cả project."),
+            .describe("Filter theo project key cụ thể, VD: 'MYPROJ'. Bỏ trống = tất cả project."),
         assigneeFilter: z
             .string()
             .default("currentUser()")
@@ -71,7 +71,7 @@ export function registerJiraTools(server) {
         customJql: z
             .string()
             .optional()
-            .describe("JQL tùy chỉnh — full override, không inject thêm gì. VD: 'project = VNPTAI AND sprint in openSprints()'"),
+            .describe("JQL tùy chỉnh — full override, không inject thêm gì. VD: 'project = MYPROJ AND sprint in openSprints()'"),
         maxResults: z
             .number()
             .min(1)
@@ -131,7 +131,7 @@ export function registerJiraTools(server) {
         "Dùng trước khi phân tích hoặc implement một task cụ thể.", {
         issueKey: z
             .string()
-            .describe("Jira issue key, VD: 'VNPTAI-123'"),
+            .describe("Jira issue key, VD: 'PROJ-123'"),
     }, withErrorHandler("get_issue_detail", async ({ issueKey }) => {
         const issue = await jiraClient.getIssue(issueKey);
         // ── Tự động check drift ────────────────────
@@ -148,12 +148,12 @@ export function registerJiraTools(server) {
     // ── TOOL 3: Logwork ──────────────────────────
     server.tool("log_work", "Ghi nhận thời gian làm việc (logwork) lên một Jira issue. " +
         "Dùng sau khi hoàn thành công việc để track effort. " +
-        "Ví dụ: đã làm 2 tiếng fix bug VNPTAI-456. " +
+        "Ví dụ: đã làm 2 tiếng fix bug PROJ-456. " +
         "⚠️ PHẢI hỏi user xác nhận TRƯỚC KHI gọi tool này — không được tự động submit. " +
         "Hiển thị nội dung sẽ log cho user review trước.", {
         issueKey: z
             .string()
-            .describe("Jira issue key, VD: 'VNPTAI-123'"),
+            .describe("Jira issue key, VD: 'PROJ-123'"),
         timeSpent: z
             .string()
             .describe("Thời gian theo format Jira: '2h', '30m', '1h 30m', '1d'. 1d = 8h."),
@@ -179,7 +179,7 @@ export function registerJiraTools(server) {
         "Truyền chỉ comment (không transitionName) để thêm ghi chú mà không đổi status. " +
         "Truyền transitionName để chuyển trạng thái (kèm comment, resolution nếu cần). " +
         "⚠️ PHẢI hỏi user xác nhận TRƯỚC KHI thay đổi status hoặc thêm comment.", {
-        issueKey: z.string().describe("Jira issue key, VD: 'VNPTAI-123'"),
+        issueKey: z.string().describe("Jira issue key, VD: 'PROJ-123'"),
         dryRun: z.boolean().default(false)
             .describe("true = chỉ xem transitions khả dụng, không thay đổi gì"),
         transitionName: z.string().optional()
@@ -247,13 +247,13 @@ export function registerJiraTools(server) {
         "- Mô tả: Phối hợp thực AM UBNB Hoài Hôi\n" +
         "- Mức độ ưu tiên: Low\n" +
         "- Nhãn (Labels): GoConnect\n" +
-        "- Mã SPDA: VNPT GoConnect\n" +
+        "- Mã SPDA: GoConnect\n" +
         "- Công đoạn: Nghiên cứu và phát triển\n" +
         "- Due Date: 2026-04-03\n" +
         "- Assign cho: nghiath (optional)\n" +
         "- Epic: GOCONNECT-100 (optional)\n" +
         "⚠️ PHẢI hỏi user xác nhận TRƯỚC KHI gọi tool này — hiển thị nội dung issue sẽ tạo cho user duyệt.", {
-        projectKey: z.string().describe("Project key, VD: 'VNPTAI'"),
+        projectKey: z.string().describe("Project key, VD: 'MYPROJ'"),
         dryRun: z.boolean().default(false)
             .describe("true = chỉ xem metadata (custom fields, users, epics) — không tạo issue"),
         issueType: z
@@ -277,7 +277,7 @@ export function registerJiraTools(server) {
         spda: z
             .string()
             .optional()
-            .describe("Mã SPDA (customfield_10100). VD: 'VNPT GoConnect' (bắt buộc khi tạo issue)"),
+            .describe("Mã SPDA (customfield_10100). VD: 'GoConnect' (bắt buộc khi tạo issue)"),
         congDoan: z
             .string()
             .optional()

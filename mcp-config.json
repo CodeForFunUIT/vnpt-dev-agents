@@ -1,6 +1,6 @@
 {
   "server": {
-    "name": "vnpt-dev-agent",
+    "name": "mcp-jira",
     "version": "1.0.0"
   },
   "defaults": {
@@ -18,8 +18,8 @@
       "CONTRIBUTING.md"
     ],
     "securityPatterns": "SECURITY_PATTERNS.md",
-    "feedbackStore": ".vnpt-dev-agent/feedback-store.json",
-    "metricsStore": ".vnpt-dev-agent/metrics-store.json"
+    "feedbackStore": ".mcp-jira/feedback-store.json",
+    "metricsStore": ".mcp-jira/metrics-store.json"
   },
   "git": {
     "branchPrefixes": {

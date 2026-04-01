@@ -131,7 +131,7 @@ export function registerCodebaseTools(server) {
     server.tool("detect_files_from_task", "Phân tích mô tả Jira task và tự động detect những file nào cần đọc/sửa. " +
         "AI sẽ trích xuất keywords từ task, tìm file liên quan, và trả về context đầy đủ để implement. " +
         "Đây là tool thông minh nhất — dùng ngay sau khi đọc chi tiết 1 Jira task.", {
-        issueKey: z.string().describe("Jira issue key. VD: 'VNPTAI-123'"),
+        issueKey: z.string().describe("Jira issue key. VD: 'PROJ-123'"),
         taskSummary: z.string().describe("Tiêu đề task từ Jira"),
         taskDescription: z.string().describe("Mô tả đầy đủ task từ Jira"),
         projectRoot: z.string().describe("Đường dẫn tuyệt đối đến thư mục gốc monorepo"),
@@ -351,7 +351,7 @@ export function registerEvaluatorTools(server) {
         "Trả về: điểm rõ ràng, độ phức tạp, rủi ro khi giao AI, " +
         "thông tin còn thiếu, ước tính giờ làm, và subtasks gợi ý. " +
         "Dùng trước khi quyết định có nên giao task này cho AI implement hay không.", {
-        issueKey: z.string().describe("Jira issue key. VD: 'VNPTAI-123'"),
+        issueKey: z.string().describe("Jira issue key. VD: 'PROJ-123'"),
         summary: z.string().describe("Tiêu đề task"),
         description: z.string().describe("Mô tả đầy đủ của task"),
         issueType: z.string().optional().describe("Loại issue: Task, Bug, Story..."),

@@ -1,7 +1,7 @@
 {
-  "name": "vnpt-dev-agent",
+  "name": "mcp-jira",
   "version": "1.0.0",
-  "description": "AI Dev Agent cho VNPT — tích hợp Jira MCP",
+  "description": "AI Dev Agent tích hợp Jira MCP",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

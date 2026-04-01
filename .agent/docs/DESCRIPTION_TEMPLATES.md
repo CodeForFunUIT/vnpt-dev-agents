@@ -1,4 +1,4 @@
-# JIRA DESCRIPTION FORMAT — VNPT AI
+# JIRA DESCRIPTION FORMAT — MCP Jira
 # ─────────────────────────────────────────────
 # Bộ format chuẩn cho 4 loại issue:
 #   1. Task (tính năng mới)
@@ -78,7 +78,7 @@ tags: [VD: transaction, list, pagination]
 sprint: [VD: Sprint 42]
 estimated_complexity: [low | medium | high]
 security_sensitive: [true | false]
-related_issues: [VD: VNPTAI-100, VNPTAI-101]
+related_issues: [VD: PROJ-100, PROJ-101]
 
 
 ══════════════════════════════════════════
@@ -182,10 +182,10 @@ Với tư cách là **[role]**, tôi muốn **[feature]** để **[benefit]**.
 
 ## [SUB_TASKS]
 <!-- Phân rã thành sub-tasks — AI sẽ dùng create_issue để tạo -->
-- [ ] [VNPTAI-XXX] Tạo ExportService với method exportToExcel()
-- [ ] [VNPTAI-XXX] Thêm nút Export vào TransactionListComponent
-- [ ] [VNPTAI-XXX] Implement permission check cho export feature
-- [ ] [VNPTAI-XXX] Unit test ExportService
+- [ ] [PROJ-XXX] Tạo ExportService với method exportToExcel()
+- [ ] [PROJ-XXX] Thêm nút Export vào TransactionListComponent
+- [ ] [PROJ-XXX] Implement permission check cho export feature
+- [ ] [PROJ-XXX] Unit test ExportService
 
 ## [AI_METADATA]
 type: Story
@@ -201,7 +201,7 @@ sub_task_count: 4
 ══════════════════════════════════════════
 
 ## [PARENT]
-Parent Story/Task: [VD: VNPTAI-150 — Export Excel cho báo cáo]
+Parent Story/Task: [VD: PROJ-150 — Export Excel cho báo cáo]
 
 ## [CONTEXT]
 <!-- 2-3 câu tóm tắt context từ parent để AI không cần đọc parent -->
@@ -258,4 +258,4 @@ tags: [VD: export, excel, service]
 sprint: [VD: Sprint 42]
 estimated_complexity: medium
 security_sensitive: false
-parent_key: [VD: VNPTAI-150]
+parent_key: [VD: PROJ-150]

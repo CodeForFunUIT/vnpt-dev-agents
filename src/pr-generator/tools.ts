@@ -28,7 +28,7 @@ export function registerPRTools(server: McpServer) {
     "Trả về nội dung sẵn sàng paste vào PR. " +
     "⚠️ PHẢI hiển thị cho user review trước khi tạo PR.",
     {
-      issueKey: z.string().describe("Jira issue key. VD: 'VNPTAI-123'"),
+      issueKey: z.string().describe("Jira issue key. VD: 'PROJ-123'"),
       projectRoot: z.string().describe("Đường dẫn codebase để lấy git info"),
       baseBranch: z.string().default("develop")
         .describe("Branch gốc để so sánh diff. Mặc định: 'develop'"),

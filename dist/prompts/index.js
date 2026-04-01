@@ -32,7 +32,7 @@ export function registerPrompts(server) {
     server.prompt("implement-task", "Workflow đầy đủ từ nhận task → implement → commit. " +
         "Dùng khi bắt đầu một task mới.", {
         issueKey: z.string()
-            .describe("Jira issue key. VD: 'VNPTAI-123'"),
+            .describe("Jira issue key. VD: 'PROJ-123'"),
         projectRoot: z.string().optional()
             .describe("Đường dẫn đến codebase. VD: 'D:/projects/my-app'"),
     }, async ({ issueKey, projectRoot }) => ({
