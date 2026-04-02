@@ -28,22 +28,40 @@ npm run build
 
 ## ⚙️ Cấu hình MCP Client (Cursor, Roo, Claude Desktop, Antigravity)
 
-Để Agent có thể hot-reload khi bạn code thêm tools mới và KHÔNG bị xung đột biến môi trường:
+Hệ thống hỗ trợ **2 cách** cấu hình biến môi trường, **ưu tiên Cách 1**:
 
-**BẮT BUỘC KHÔNG thêm JIRA_PAT vào file setup mcp.json** định danh. Hãy cấu hình như sau:
+### Cách 1: Truyền `env` trong MCP Client config (✅ Khuyên dùng)
+
+Thêm block `"env"` trực tiếp vào file cấu hình MCP Client. Đây là **chuẩn chính thức MCP Protocol**, hoạt động bất kể thư mục làm việc hiện tại là gì.
 
 ```json
 {
   "mcpServers": {
     "mcp-jira": {
       "command": "node",
-      "args": [
-        "<path-to-project>/build/index.js"
-      ]
+      "args": ["<path-to-project>/dist/index.js"],
+      "env": {
+        "JIRA_BASE_URL": "https://your-jira-server.example.com",
+        "JIRA_PAT": "YOUR_PERSONAL_ACCESS_TOKEN",
+        "JIRA_DEFAULT_PROJECT": "MYPROJECT"
+      }
     }
   }
 }
 ```
+
+> ⚠️ **Bảo mật:** File config MCP thường nằm ở thư mục cá nhân ($HOME) và không được commit lên Git, nên việc đặt PAT ở đây là an toàn.
+
+### Cách 2: Dùng file `.env` (Fallback cho local dev)
+
+```bash
+cp .env.example .env
+# → Mở file .env và điền cấu hình JIRA
+```
+
+> 💡 **Thứ tự ưu tiên:** env từ MCP Client config → `.env` file → lỗi khởi động.
+> Nếu đã set env trong MCP config, `.env` file sẽ **không** ghi đè.
+
 *Lưu ý: Thay thế `<path-to-project>` bằng đường dẫn tuyệt đối chuẩn xác tới thư mục dự án của bạn.*
 
 

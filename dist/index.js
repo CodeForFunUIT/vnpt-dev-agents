@@ -1,4 +1,16 @@
-import "dotenv/config"; // Load .env trước tất cả mọi thứ
+// ─────────────────────────────────────────────
+// Load .env với path tuyệt đối
+// Khi MCP Client khởi chạy server, cwd có thể ở bất kỳ đâu
+// → dùng __dirname để luôn tìm đúng .env trong thư mục project
+// Nếu env vars đã được set qua MCP Client config ("env" block)
+// thì dotenv KHÔNG ghi đè (override: false mặc định)
+// ─────────────────────────────────────────────
+import * as dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, "../.env") });
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerJiraTools } from "./jira/tools.js";

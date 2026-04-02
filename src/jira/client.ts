@@ -16,8 +16,14 @@ export class JiraClient {
 
     if (!baseURL || !pat) {
       throw new Error(
-        "Thiếu biến môi trường: JIRA_BASE_URL hoặc JIRA_PAT\n" +
-        "Hãy copy .env.example → .env và điền vào"
+        "Thiếu biến môi trường: JIRA_BASE_URL hoặc JIRA_PAT\n\n" +
+        "Cách 1 (Khuyên dùng): Thêm block \"env\" vào cấu hình MCP Client:\n" +
+        '  "mcp-jira": {\n' +
+        '    "command": "node",\n' +
+        '    "args": ["path/to/dist/index.js"],\n' +
+        '    "env": { "JIRA_BASE_URL": "https://...", "JIRA_PAT": "xxx" }\n' +
+        '  }\n\n' +
+        "Cách 2 (Local dev): Copy .env.example → .env và điền vào"
       );
     }
 

@@ -6,6 +6,42 @@ Tuy nhiên, để AI code **"đúng ý" 100% như 1 thành viên gắn bó lâu 
 
 ---
 
+## 🔐 Cấu hình Biến Môi Trường (Environment Variables)
+
+Server hỗ trợ **2 cách** nhận biến môi trường, theo thứ tự ưu tiên:
+
+### Cách 1: Block `env` trong MCP Client config (✅ Khuyên dùng)
+
+Đây là **chuẩn chính thức MCP Protocol**. Hoạt động bất kể MCP Client khởi chạy server ở thư mục nào.
+
+```json
+{
+  "mcp-jira": {
+    "command": "node",
+    "args": ["<path>/dist/index.js"],
+    "env": {
+      "JIRA_BASE_URL": "https://your-jira-server.example.com",
+      "JIRA_PAT": "YOUR_PAT_TOKEN",
+      "JIRA_DEFAULT_PROJECT": "MYPROJECT"
+    }
+  }
+}
+```
+
+### Cách 2: File `.env` trong thư mục dự án (Fallback)
+
+```bash
+cp .env.example .env
+# Điền các biến vào .env
+```
+
+> 💡 **Priority:** env từ MCP Client config (Cách 1) → `.env` file (Cách 2) → lỗi khởi động.
+> Nếu đã set env ở Cách 1, file `.env` sẽ **không** ghi đè.
+
+> ⚠️ **Bảo mật:** KHÔNG commit file `.env` hoặc file config MCP chứa PAT lên Git!
+
+---
+
 ## 🏗️ 3 File Tài liệu "Nhập môn" (Context Files)
 
 Các file này nên được đặt ở thư mục gốc của dự án (hoặc thư mục `docs/` của dự án đó). AI sẽ tự động tìm quét và học thuộc lòng trước khi code.
